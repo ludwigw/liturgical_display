@@ -22,10 +22,16 @@ This project uses a **Raspberry Pi Zero W2** and a **Waveshare 10.3” eInk disp
 * [`liturgical-calendar`](https://github.com/ludwigw/liturgical-calendar)
 
   * Provides feast logic, calendar generation, artwork caching, and image rendering
-* [`IT8951-ePaper`](https://github.com/ludwigw/IT8951-ePaper)
-
-  * Drives the Waveshare 10.3" eInk display (1872x1404px)
-  * Accepts images via Pillow (`PIL.Image`) or raw buffer
+* [`IT8951-ePaper`](https://github.com/ludwigw/IT8951-ePaper)  
+  * **New in `refactir` branch:**
+    * Recommended usage is via the `epdraw` CLI tool: build with `make bin/epdraw` and run `./bin/epdraw myimage.jpg` (supports PNG, JPG, BMP, etc.; auto-converts using ImageMagick).
+    * High-level C API: `EPD_IT8951_DisplayBMP(filename, vcom, mode)` for direct integration.
+    * Supports multiple bit depths: 1bpp, 2bpp, 4bpp, 8bpp (4bpp recommended for speed/quality).
+    * Multiple refresh modes: GC16 (grayscale, best quality), A2 (fast, black/white), INIT (clear).
+    * Hardware abstraction for Raspberry Pi (all models) and STM32; supports BCM, LGPIO, GPIOD backends.
+    * Extensive documentation and troubleshooting in `/docs` (see quickstart, API, architecture, and more).
+    * Improved testing: unit tests for GUI, driver, CLI, and platform abstraction; CI coverage for platform-agnostic code.
+    * See `/docs/api.md` and `/docs/quickstart.md` for details.
 
 ### 📆 Python Dependencies
 

@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        run: docker build -t liturgical-test .
+
+      - name: Run integration test in Docker
+        run: |
+          docker run --rm -v ${{ github.workspace }}:/workspace liturgical-test bash -c '
+            set -e
+            cd /home/pi/liturgical_display
+            # Remove artwork-cache to force cache-artwork
+            rm -rf /home/pi/liturgical-calendar/artwork-cache || true
+            # Run the workflow
+            python3 main.py || (cat logs/display.log && false)
+            # Check logs
+            echo "--- display.log ---"
+            cat logs/display.log
+            echo "--- epdraw_mock.log ---"
+            cat /tmp/epdraw_mock.log
+            # Check that mock epdraw was called
+            grep "Mock epdraw called" /tmp/epdraw_mock.log
+          ' 

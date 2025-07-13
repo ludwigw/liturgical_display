@@ -1,0 +1,3 @@
+GitPython
+Pillow
+liturgical-calendar @ git+https://github.com/ludwigw/liturgical-calendar.git 

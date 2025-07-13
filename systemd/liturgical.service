@@ -1,0 +1,11 @@
+[Unit]
+Description=Run Liturgical Calendar Display
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 /home/pi/liturgical-display/main.py
+WorkingDirectory=/home/pi/liturgical-display
+StandardOutput=journal
+StandardError=journal
+Restart=no 
