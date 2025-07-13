@@ -18,21 +18,13 @@ This project displays a daily liturgical calendar image on a Waveshare 10.3" eIn
    ```sh
    ./setup.sh
    ```
+   > **Note:** The setup script automatically builds the epdraw tool for real hardware deployment. For testing in Docker, epdraw is automatically mocked.
 3. **Edit `config.yaml`** to match your environment (paths, VCOM, etc).
-4. **Build the epdraw tool:**
-   ```sh
-   git clone https://github.com/ludwigw/IT8951-ePaper.git
-   cd IT8951-ePaper
-   git checkout refactir
-   make bin/epdraw
-   cp bin/epdraw ../liturgical_display/bin/
-   cd ../liturgical_display
-   ```
-5. **Test the workflow:**
+4. **Test the workflow:**
    ```sh
    source venv/bin/activate && python3 -m liturgical_display.main
    ```
-6. **(Optional) Enable systemd service and timer** for daily runs (see systemd/ directory).
+5. **(Optional) Enable systemd service and timer** for daily runs (see systemd/ directory).
 
 ## Configuration: config.yaml
 
@@ -78,11 +70,21 @@ log_file: /home/pi/liturgical-display/logs/display.log
 - IT8951-ePaper (for `epdraw` CLI tool)
 - liturgical-calendar (installed via requirements.txt)
 
-## Testing
-Run the integration test to verify everything works:
+## Testing vs Deployment
+
+### Testing (Docker)
+For testing the integration without real hardware:
 ```sh
 ./tests/test_integration.sh
 ```
+This uses a mock epdraw tool and verifies the complete workflow.
+
+### Deployment (Real Hardware)
+For deployment on actual Raspberry Pi hardware:
+1. Follow the Quick Start steps above (setup script builds epdraw automatically)
+2. Ensure SPI is enabled on your Pi (`raspi-config`)
+3. Connect the eInk display hardware
+4. Test with: `source venv/bin/activate && python3 -m liturgical_display.main`
 
 ## Troubleshooting
 - Ensure SPI is enabled on your Pi (`raspi-config`).
