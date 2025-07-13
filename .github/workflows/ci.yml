@@ -16,23 +16,13 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
-        run: docker build -t liturgical-test .
-
-      - name: Run integration test in Docker
+      - name: Make test scripts executable
         run: |
-          docker run --rm -v ${{ github.workspace }}:/workspace liturgical-test bash -c '
-            set -e
-            cd /home/pi/liturgical_display
-            # Remove artwork-cache to force cache-artwork
-            rm -rf /home/pi/liturgical-calendar/artwork-cache || true
-            # Run the workflow
-            python3 main.py || (cat logs/display.log && false)
-            # Check logs
-            echo "--- display.log ---"
-            cat logs/display.log
-            echo "--- epdraw_mock.log ---"
-            cat /tmp/epdraw_mock.log
-            # Check that mock epdraw was called
-            grep "Mock epdraw called" /tmp/epdraw_mock.log
-          ' 
+          chmod +x run_tests.sh
+          chmod +x tests/test_systemd_static.sh
+          chmod +x tests/test_systemd_timer_in_docker.sh
+          chmod +x tests/test_integration.sh || true
+
+      - name: Run all tests
+        run: |
+          sudo ./run_tests.sh 

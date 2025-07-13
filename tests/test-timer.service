@@ -1,0 +1,9 @@
+[Unit]
+Description=Test systemd timer service
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c 'echo "Timer fired at $(date)" >> /tmp/test_systemd_timer.log'
+
+[Install]
+WantedBy=multi-user.target 

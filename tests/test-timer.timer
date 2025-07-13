@@ -1,0 +1,10 @@
+[Unit]
+Description=Test systemd timer (every minute)
+
+[Timer]
+OnCalendar=*-*-* *:*:00
+AccuracySec=1s
+Unit=test-timer.service
+
+[Install]
+WantedBy=timers.target 
