@@ -55,4 +55,26 @@ echo ""
 echo "Next steps:"
 echo "1. Edit config.yaml to match your environment"
 echo "2. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
-echo "3. (Optional) Enable systemd service for daily runs" 
+echo "3. (Optional) Enable systemd service for daily runs"
+
+# Run validation to ensure everything is working
+echo ""
+echo "🔍 Running installation validation..."
+echo "================================================"
+
+if [ -f "validate_install.sh" ] && [ -x "validate_install.sh" ]; then
+    if ./validate_install.sh; then
+        echo ""
+        echo "🎉 Setup and validation completed successfully!"
+        echo "✅ Your liturgical_display installation is ready to use."
+    else
+        echo ""
+        echo "⚠️  Setup completed, but validation found some issues."
+        echo "Please review the validation output above and address any problems."
+        echo "You can run './validate_install.sh' again to re-check after fixing issues."
+        exit 1
+    fi
+else
+    echo "⚠️  Validation script not found or not executable."
+    echo "Setup completed, but please run './validate_install.sh' manually to verify the installation."
+fi 
