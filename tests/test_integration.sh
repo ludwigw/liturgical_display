@@ -16,9 +16,12 @@ docker run --rm -v "$PWD":/workspace liturgical-test bash -c '
   # Run the workflow using the new package structure with venv
   export LITURGICAL_TEST_MODE=1
   ./venv/bin/python3 -m liturgical_display.main || (cat logs/display.log && false)
+  # Search for display.log anywhere in the container
+  echo "--- Searching for display.log anywhere in the container ---"
+  find / -name display.log 2>/dev/null || true
   # Check logs
   echo "--- display.log ---"
-  cat logs/display.log
+  cat /home/pi/liturgical-display/logs/display.log
   echo "--- epdraw_mock.log ---"
   cat /tmp/epdraw_mock.log
   # Check that mock epdraw was called

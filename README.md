@@ -28,42 +28,37 @@ This project displays a daily liturgical calendar image on a Waveshare 10.3" eIn
 
 ## Validation
 
-The project includes a comprehensive validation script that checks all components of the installation:
+## Testing & Validation
+
+All validation and integration testing is now performed via the unified test runner:
 
 ```sh
-./validate_install.sh
+./run_tests.sh
 ```
 
-**What it validates:**
-- Virtual environment setup and activation
-- Python version compatibility (3.11+)
-- liturgical-calendar package installation and version
-- Font accessibility and loading
-- epdraw tool availability and permissions
-- Configuration file structure and required keys
-- CLI functionality and image generation pipeline
-- Main module imports
-- Directory structure and permissions
-- Systemd service files (optional)
+This script runs:
+- Systemd static validation (unit file checks)
+- Full integration test (in Docker, with log and workflow validation)
+- (Optionally) systemd scheduling test (Linux only)
+- (Optionally) Python unit tests (if present)
 
-**Validation options:**
-```sh
-./validate_install.sh --help      # Show help and usage
-./validate_install.sh --version   # Show version information
+**How to use:**
+- Run `./run_tests.sh` locally to check your setup before deployment or after making changes.
+- The integration test covers the entire workflow, including setup, validation, and log file checks.
+- In CI, only `run_tests.sh` is used for all validation.
+
+**Sample test runner output:**
+```
+====================
+Test Summary:
+  ✅ Passed:   2
+  ❌ Failed:   0
+  ⚠️  Skipped:  2
+====================
+All tests passed!
 ```
 
-The setup script automatically runs validation after installation. If validation fails, the setup script will exit with an error code and provide guidance on fixing issues.
-
-**Sample validation output:**
-```
-📊 Test Results:
-   Total tests: 18
-   ✅ Passed: 15
-   ❌ Failed: 0
-   ⚠️  Warnings: 0
-
-✅ Installation validation PASSED! 🎉
-```
+> **Note:** The old `validate_install.sh` script is still available for manual troubleshooting, but is no longer run directly in CI or the main test runner. All validation is now covered by the integration test.
 
 ## Configuration: config.yaml
 

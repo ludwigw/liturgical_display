@@ -12,7 +12,7 @@ print_result() {
   if [ $1 -eq 0 ]; then
     echo -e "\033[0;32m✅ $2\033[0m"
     PASS=$((PASS+1))
-  elif [ $1 -99 ]; then
+  elif [ $1 -eq -99 ]; then
     echo -e "\033[1;33m⚠️  Skipped: $2\033[0m"
     SKIP=$((SKIP+1))
   else
@@ -33,19 +33,7 @@ else
   print_result -99 "No Python unit/integration tests found"
 fi
 
-# 2. Validation script (Docker only)
-echo "\nRunning validate_install.sh in Docker..."
-if docker build -t liturgical-test .; then
-  if docker run --rm liturgical-test:latest bash -c "cd /home/pi/liturgical_display && ./validate_install.sh"; then
-    print_result 0 "validate_install.sh (Docker)"
-  else
-    print_result 1 "validate_install.sh (Docker)"
-  fi
-else
-  print_result 1 "Docker build for validation failed"
-fi
-
-# 3. Systemd static validation
+# 2. Systemd static validation
 if [ -x tests/test_systemd_static.sh ]; then
   echo "\nRunning systemd static validation..."
   if tests/test_systemd_static.sh; then

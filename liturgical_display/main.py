@@ -32,8 +32,10 @@ def setup_logging(config):
     return logger
 
 def main():
+    print("[main.py] Entering main() and setting up logger...")
     config = load_config()
     logger = setup_logging(config)
+    logger.info("Logger initialized and main() started.")
     logger.info("Loaded config: %s", config)
     logger.info("Step 1: Update liturgical-calendar package and cache artwork...")
     updated = update_calendar_package(config, logger=logger)
