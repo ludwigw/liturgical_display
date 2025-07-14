@@ -5,7 +5,7 @@ echo "[test_integration.sh] Building Docker image..."
 docker build -t liturgical-test .
 
 echo "[test_integration.sh] Running integration test in Docker..."
-docker run --rm -v "$PWD":/workspace -e CI -e GITHUB_ACTIONS liturgical-test bash -c '
+docker run --rm -v "$PWD":/workspace -e CI=true -e GITHUB_ACTIONS=true liturgical-test bash -c '
   set -e
   cd /home/pi/liturgical_display
   # Run setup script to configure environment (now uses venv)
