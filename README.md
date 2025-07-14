@@ -9,6 +9,12 @@ This project displays a daily liturgical calendar image on a Waveshare 10.3" eIn
 - SD card, power supply, network access
 
 ## Quick Start
+**One-line install:**
+```sh
+git clone https://github.com/ludwigw/liturgical_display.git && cd liturgical_display && ./setup.sh
+```
+
+**Or step by step:**
 1. **Clone this repository:**
    ```sh
    git clone https://github.com/ludwigw/liturgical_display.git
