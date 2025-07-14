@@ -22,6 +22,18 @@ pip install --upgrade pip
 echo "Installing requirements..."
 pip install -r requirements.txt
 
+# Install ImageMagick if not present
+if ! command -v convert >/dev/null 2>&1; then
+    echo "ImageMagick not found. Installing via apt-get..."
+    if command -v apt-get >/dev/null 2>&1; then
+        sudo apt-get update && sudo apt-get install -y imagemagick
+    else
+        echo "WARNING: Could not install ImageMagick automatically (apt-get not found). Please install it manually."
+    fi
+else
+    echo "ImageMagick is already installed."
+fi
+
 # Build epdraw tool if not already present
 echo "Checking for epdraw tool..."
 if [ ! -f "bin/epdraw" ]; then
