@@ -19,6 +19,38 @@ docker run --rm -v "$PWD":/workspace -e CI -e GITHUB_ACTIONS liturgical-test bas
   ./venv/bin/python3 -m liturgical_display.main
   MAIN_EXIT=$?
   set -e
+ 
+  echo "🔍 Main script exited with code: $MAIN_EXIT"
+ 
+  # Debug: Check the problematic cache file IMMEDIATELY after main script
+  echo "--- Debugging cache file issue ---"
+  # Check multiple possible cache locations
+  CACHE_FILE="cache/instagram_DD_STbbu5tP_bffb5f4c.jpg"
+  HOME_CACHE_FILE="/home/pi/.liturgical-cache/instagram_DD_STbbu5tP_bffb5f4c.jpg"
+  
+  echo "🔍 Current directory: $(pwd)"
+  echo "🔍 Looking for cache file in multiple locations..."
+  
+  if [ -f "$CACHE_FILE" ]; then
+    echo "✅ Cache file exists: $CACHE_FILE"
+    echo "📏 File size: $(ls -lh "$CACHE_FILE" | awk '{print $5}')"
+    echo "🔍 File type: $(file "$CACHE_FILE")"
+    echo "📄 First 10 lines:"
+    head -10 "$CACHE_FILE" || echo "Could not read file content"
+  elif [ -f "$HOME_CACHE_FILE" ]; then
+    echo "✅ Cache file exists in home cache: $HOME_CACHE_FILE"
+    echo "📏 File size: $(ls -lh "$HOME_CACHE_FILE" | awk '{print $5}')"
+    echo "🔍 File type: $(file "$HOME_CACHE_FILE")"
+    echo "📄 First 10 lines:"
+    head -10 "$HOME_CACHE_FILE" || echo "Could not read file content"
+  else
+    echo "❌ Cache file does not exist: $CACHE_FILE"
+    echo "❌ Cache file does not exist in home cache: $HOME_CACHE_FILE"
+    echo "📁 Cache directory contents:"
+    ls -la cache/ || echo "Cache directory does not exist"
+    echo "📁 Home cache directory contents:"
+    ls -la /home/pi/.liturgical-cache/ || echo "Home cache directory does not exist"
+  fi
 
   # Search for display.log anywhere in the container
   echo "--- Searching for display.log anywhere in the container ---"
@@ -26,21 +58,6 @@ docker run --rm -v "$PWD":/workspace -e CI -e GITHUB_ACTIONS liturgical-test bas
   # Check logs
   echo "--- display.log ---"
   cat /home/pi/liturgical-display/logs/display.log
- 
-  # Debug: Check the problematic cache file
-  echo "--- Debugging cache file issue ---"
-  CACHE_FILE="cache/instagram_DD_STbbu5tP_bffb5f4c.jpg"
-  if [ -f "$CACHE_FILE" ]; then
-    echo "✅ Cache file exists: $CACHE_FILE"
-    echo "📏 File size: $(ls -lh "$CACHE_FILE" | awk '{print $5}')"
-    echo "🔍 File type: $(file "$CACHE_FILE")"
-    echo "📄 First 10 lines:"
-    head -10 "$CACHE_FILE" || echo "Could not read file content"
-  else
-    echo "❌ Cache file does not exist: $CACHE_FILE"
-    echo "📁 Cache directory contents:"
-    ls -la cache/ || echo "Cache directory does not exist"
-  fi
  
   # CI-tolerant: If running in CI, do not fail for image download errors
   if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
