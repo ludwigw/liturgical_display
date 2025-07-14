@@ -18,7 +18,7 @@
 # Date: 2024-12-13
 #
 
-set -e
+set +e  # Disable exit on error to allow warnings and debug prints
 
 echo "🔍 Validating liturgical_display installation..."
 echo "================================================"
@@ -142,6 +142,11 @@ print_status() {
     fi
 }
 
+# After each major block, add a progress print
+print_progress() {
+    echo "[DEBUG] Progress: $1"
+}
+
 # 1. Check if virtual environment exists
 echo ""
 echo "1. Checking virtual environment..."
@@ -151,6 +156,7 @@ else
     print_status "FAIL" "Virtual environment not found. Run ./setup.sh first."
     OVERALL_STATUS="FAIL"
 fi
+print_progress "Checked virtual environment"
 
 # 2. Check if virtual environment can be activated
 if [ -d "venv" ]; then
@@ -304,6 +310,7 @@ else
         OVERALL_STATUS="FAIL"
     fi
 fi
+print_progress "Checked image generation"
 
 # Debug print of test counters before final exit
 echo "[DEBUG] TOTAL_TESTS: $TOTAL_TESTS, PASSED_TESTS: $PASSED_TESTS, FAILED_TESTS: $FAILED_TESTS, WARNING_TESTS: $WARNING_TESTS"
