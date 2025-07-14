@@ -51,6 +51,7 @@ docker run --rm -v "$PWD":/workspace -e CI -e GITHUB_ACTIONS liturgical-test bas
     echo "📁 Home cache directory contents:"
     ls -la /home/pi/.liturgical-cache/ || echo "Home cache directory does not exist"
   fi
+  set -e
 
   # Search for display.log anywhere in the container
   echo "--- Searching for display.log anywhere in the container ---"
