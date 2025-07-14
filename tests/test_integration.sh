@@ -5,7 +5,7 @@ echo "[test_integration.sh] Building Docker image..."
 docker build -t liturgical-test .
 
 echo "[test_integration.sh] Running integration test in Docker..."
-docker run --rm -v "$PWD":/workspace liturgical-test bash -c '
+docker run --rm -v "$PWD":/workspace -e CI -e GITHUB_ACTIONS liturgical-test bash -c '
   set -e
   cd /home/pi/liturgical_display
   # Run setup script to configure environment (now uses venv)
@@ -26,6 +26,22 @@ docker run --rm -v "$PWD":/workspace liturgical-test bash -c '
   # Check logs
   echo "--- display.log ---"
   cat /home/pi/liturgical-display/logs/display.log
+ 
+  # Debug: Check the problematic cache file
+  echo "--- Debugging cache file issue ---"
+  CACHE_FILE="cache/instagram_DD_STbbu5tP_bffb5f4c.jpg"
+  if [ -f "$CACHE_FILE" ]; then
+    echo "✅ Cache file exists: $CACHE_FILE"
+    echo "📏 File size: $(ls -lh "$CACHE_FILE" | awk '{print $5}')"
+    echo "🔍 File type: $(file "$CACHE_FILE")"
+    echo "📄 First 10 lines:"
+    head -10 "$CACHE_FILE" || echo "Could not read file content"
+  else
+    echo "❌ Cache file does not exist: $CACHE_FILE"
+    echo "📁 Cache directory contents:"
+    ls -la cache/ || echo "Cache directory does not exist"
+  fi
+ 
   # CI-tolerant: If running in CI, do not fail for image download errors
   if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
     # Check for specific network/download errors that are expected in CI
