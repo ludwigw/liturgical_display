@@ -291,6 +291,9 @@ if [ $GEN_EXIT -eq 0 ] && [ -s "$TEST_IMAGE" ]; then
 else
     if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
         if echo "$GEN_OUTPUT" | grep -q "HTTP error downloading.*429\|Too Many Requests\|cannot identify image file\|Download/cache error"; then
+            # Only increment WARNING_TESTS, not FAILED_TESTS
+            TOTAL_TESTS=$((TOTAL_TESTS + 1))
+            WARNING_TESTS=$((WARNING_TESTS + 1))
             print_status "WARN" "Image generation failed (likely due to network/429 in CI), but continuing"
         else
             print_status "FAIL" "Image generation CLI did not produce an image"
@@ -301,6 +304,9 @@ else
         OVERALL_STATUS="FAIL"
     fi
 fi
+
+# Debug print of test counters before final exit
+echo "[DEBUG] TOTAL_TESTS: $TOTAL_TESTS, PASSED_TESTS: $PASSED_TESTS, FAILED_TESTS: $FAILED_TESTS, WARNING_TESTS: $WARNING_TESTS"
 
 # 10. Check systemd service files
 echo "10. Checking systemd service files..."
