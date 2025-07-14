@@ -291,6 +291,8 @@ fi
 echo "9. Testing image generation capability..."
 GEN_OUTPUT=$(source venv/bin/activate 2>/dev/null && python3 -m liturgical_calendar.cli generate --output "$TEST_IMAGE" 2024-12-25 2>&1)
 GEN_EXIT=$?
+echo "[DEBUG] CI: $CI, GITHUB_ACTIONS: $GITHUB_ACTIONS"
+echo "[DEBUG] GEN_OUTPUT: $GEN_OUTPUT"
 if [ $GEN_EXIT -eq 0 ] && [ -s "$TEST_IMAGE" ]; then
     print_status "PASS" "Image generation CLI produced an image"
     rm -f "$TEST_IMAGE"
