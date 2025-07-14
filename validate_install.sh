@@ -351,19 +351,7 @@ echo "   ❌ Failed: $FAILED_TESTS"
 echo "   ⚠️  Warnings: $WARNING_TESTS"
 echo ""
 
-if [ "$OVERALL_STATUS" = "PASS" ]; then
-    print_status "PASS" "Installation validation PASSED! 🎉"
-    echo ""
-    echo "✅ Your liturgical_display installation is ready!"
-    echo ""
-    echo "Next steps:"
-    echo "1. Edit config.yaml to match your environment"
-    echo "2. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
-    echo "3. (Optional) Run integration test: ./tests/test_integration.sh"
-    echo "4. (Optional) Enable systemd service for daily runs"
-    echo ""
-    echo "For troubleshooting, see README.md and PLAN.md"
-else
+if [ "$FAILED_TESTS" -gt 0 ]; then
     print_status "FAIL" "Installation validation FAILED! ❌"
     echo ""
     echo "❌ Some components are missing or not working correctly."
@@ -378,4 +366,17 @@ else
         echo "💡 Tip: Run with --verbose for more detailed information"
     fi
     exit 1
+else
+    print_status "PASS" "Installation validation PASSED! 🎉"
+    echo ""
+    echo "✅ Your liturgical_display installation is ready!"
+    echo ""
+    echo "Next steps:"
+    echo "1. Edit config.yaml to match your environment"
+    echo "2. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
+    echo "3. (Optional) Run integration test: ./tests/test_integration.sh"
+    echo "4. (Optional) Enable systemd service for daily runs"
+    echo ""
+    echo "For troubleshooting, see README.md and PLAN.md"
+    exit 0
 fi 
