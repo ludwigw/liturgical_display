@@ -80,4 +80,5 @@ docker run --rm -v "$PWD":/workspace -e CI -e GITHUB_ACTIONS liturgical-test bas
   grep "Mock epdraw called" /tmp/epdraw_mock.log
 '
 
-echo "[test_integration.sh] Integration test PASSED." 
+echo "[test_integration.sh] Integration test PASSED."
+exit 0 

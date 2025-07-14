@@ -27,6 +27,7 @@ if [ -d tests ] && ls tests/*.py >/dev/null 2>&1; then
   if python3 -m unittest discover tests; then
     print_result 0 "Python unit/integration tests"
   else
+    echo "[run_tests.sh] Python tests exited with code $?"
     print_result 1 "Python unit/integration tests"
   fi
 else
@@ -39,6 +40,7 @@ if [ -x tests/test_systemd_static.sh ]; then
   if tests/test_systemd_static.sh; then
     print_result 0 "Systemd static validation"
   else
+    echo "[run_tests.sh] Systemd static validation exited with code $?"
     print_result 1 "Systemd static validation"
   fi
 else
@@ -53,6 +55,7 @@ if [ "$OS_TYPE" = "Linux" ]; then
     if sudo tests/test_systemd_timer_in_docker.sh; then
       print_result 0 "Systemd scheduling test (Docker)"
     else
+      echo "[run_tests.sh] Systemd scheduling test (Docker) exited with code $?"
       print_result 1 "Systemd scheduling test (Docker)"
     fi
   else
@@ -68,6 +71,7 @@ if [ -x tests/test_integration.sh ]; then
   if tests/test_integration.sh; then
     print_result 0 "Integration test script"
   else
+    echo "[run_tests.sh] Integration test script exited with code $?"
     print_result 1 "Integration test script"
   fi
 else
