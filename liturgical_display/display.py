@@ -27,6 +27,7 @@ def display_image(image_path=None, config=None, logger=None):
         # Mode 2 (GC16) is required for the Waveshare 10.3" eInk display (IT8951)
         # Do not change unless you have a different display or special requirements
         subprocess.run([
+            'sudo',
             epdraw_path,
             image_path,
             vcom_arg,

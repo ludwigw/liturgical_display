@@ -8,6 +8,8 @@ This project displays a daily liturgical calendar image on a Waveshare 10.3" eIn
 - Waveshare 10.3" eInk display (IT8951 controller)
 - SD card, power supply, network access
 
+> **Note:** The epdraw tool requires `sudo` privileges to access GPIO pins via the BCM library. This is automatically handled by the display script.
+
 ## Quick Start
 **One-line install:**
 ```sh
