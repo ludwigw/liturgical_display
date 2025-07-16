@@ -1,6 +1,6 @@
 # Example config.yaml for liturgical_display
 # Package handles its own caching internally
-output_image: /home/pi/liturgical-display/today.png
+output_image: /home/pi/liturgical_display/today.png
 vcom: -2.51
 shutdown_after_display: false
-log_file: /home/pi/liturgical-display/logs/display.log 
+log_file: /home/pi/liturgical_display/logs/display.log 
