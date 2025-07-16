@@ -69,7 +69,22 @@ echo "1. Edit config.yaml to match your environment"
 echo "2. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
 echo "3. (Optional) Enable systemd service for daily runs"
 
-# Run validation to ensure everything is working
+# Prompt to enable systemd timer for daily updates
+echo ""
+echo "Do you want to schedule these to update daily using systemd? (Y/n)"
+read -r enable_systemd
+if [ -z "$enable_systemd" ] || [ "$enable_systemd" = "Y" ] || [ "$enable_systemd" = "y" ]; then
+    echo "Installing and enabling systemd service and timer..."
+    sudo cp systemd/liturgical.service /etc/systemd/system/
+    sudo cp systemd/liturgical.timer /etc/systemd/system/
+    sudo systemctl daemon-reload
+    sudo systemctl enable liturgical.timer
+    sudo systemctl start liturgical.timer
+    echo "Systemd service and timer installed and enabled for daily runs."
+else
+    echo "Skipping systemd service and timer setup. You can enable it later by running these commands manually."
+fi
+
 echo ""
 echo "🔍 Running installation validation..."
 echo "================================================"
