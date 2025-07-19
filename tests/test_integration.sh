@@ -1,15 +1,18 @@
 #!/bin/bash
 set -e
 
+CONTAINER_NAME=liturgical-test-$$
+IMAGE=liturgical-test
+
 echo "[test_integration.sh] Building Docker image..."
-docker build -t liturgical-test .
+docker build -t $IMAGE .
 
 echo "[test_integration.sh] Running integration test in Docker..."
-docker run --rm -v "$PWD":/workspace -e CI=true -e GITHUB_ACTIONS=true liturgical-test bash -c '
+docker run --rm -v "$PWD":/workspace -e CI=true -e GITHUB_ACTIONS=true $IMAGE bash -c '
   set -e
   cd /home/pi/liturgical_display
   # Run setup script to configure environment (now uses venv)
-  bash setup.sh
+  VCOM=-2.51 ENABLE_SYSTEMD=Y bash setup.sh --non-interactive
   # Remove cache and fonts to force fresh setup
   rm -rf /home/pi/.liturgical-cache || true
   rm -rf /home/pi/.liturgical-fonts || true
@@ -26,7 +29,7 @@ docker run --rm -v "$PWD":/workspace -e CI=true -e GITHUB_ACTIONS=true liturgica
   echo "--- Debugging cache file issue ---"
   # Check multiple possible cache locations
   CACHE_FILE="cache/instagram_DD_STbbu5tP_bffb5f4c.jpg"
-  HOME_CACHE_FILE="/home/pi/.liturgical-cache/instagram_DD_STbbu5tP_bffb5f4c.jpg"
+  HOME_CACHE_FILE="/home/pi/.liturgical-cache/instagram_DD_STbbu5f4c.jpg"
   
   echo "🔍 Current directory: $(pwd)"
   echo "🔍 Looking for cache file in multiple locations..."

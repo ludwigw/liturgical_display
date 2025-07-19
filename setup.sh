@@ -69,22 +69,6 @@ echo "1. Edit config.yaml to match your environment"
 echo "2. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
 echo "3. (Optional) Enable systemd service for daily runs"
 
-# Prompt to enable systemd timer for daily updates
-echo ""
-echo "Do you want to schedule these to update daily using systemd? (Y/n)"
-read -r enable_systemd
-if [ -z "$enable_systemd" ] || [ "$enable_systemd" = "Y" ] || [ "$enable_systemd" = "y" ]; then
-    echo "Installing and enabling systemd service and timer..."
-    sudo cp systemd/liturgical.service /etc/systemd/system/
-    sudo cp systemd/liturgical.timer /etc/systemd/system/
-    sudo systemctl daemon-reload
-    sudo systemctl enable liturgical.timer
-    sudo systemctl start liturgical.timer
-    echo "Systemd service and timer installed and enabled for daily runs."
-else
-    echo "Skipping systemd service and timer setup. You can enable it later by running these commands manually."
-fi
-
 echo ""
 echo "🔍 Running installation validation..."
 echo "================================================"
@@ -104,4 +88,87 @@ if [ -f "validate_install.sh" ] && [ -x "validate_install.sh" ]; then
 else
     echo "⚠️  Validation script not found or not executable."
     echo "Setup completed, but please run './validate_install.sh' manually to verify the installation."
+fi 
+
+# Parse arguments for non-interactive mode
+NON_INTERACTIVE=0
+for arg in "$@"; do
+  if [ "$arg" = "--non-interactive" ]; then
+    NON_INTERACTIVE=1
+  fi
+done
+
+# --- CONFIGURATION SETUP ---
+USER_HOME="$HOME"
+CONFIG_FILE="config.yaml"
+BACKUP_FILE="config.yaml.bak"
+
+# If config.yaml exists, read current values
+if [ -f "$CONFIG_FILE" ]; then
+    CURRENT_VCOM=$(grep '^vcom:' "$CONFIG_FILE" | awk '{print $2}')
+    echo "Existing config.yaml found."
+    echo "Backing up current config.yaml to $BACKUP_FILE."
+    cp "$CONFIG_FILE" "$BACKUP_FILE"
+else
+    CURRENT_VCOM="-1.18"
+fi
+
+if [ $NON_INTERACTIVE -eq 1 ]; then
+    # Use env var or default for VCOM
+    USER_VCOM="${VCOM:-$CURRENT_VCOM}"
+else
+    echo ""
+    echo "Please enter the VCOM value for your eInk display (see sticker on FPC cable) [default: $CURRENT_VCOM]:"
+    read -r USER_VCOM
+    if [ -z "$USER_VCOM" ]; then
+        USER_VCOM="$CURRENT_VCOM"
+    fi
+fi
+
+OUTPUT_IMAGE="$USER_HOME/liturgical_display/today.png"
+LOG_FILE="$USER_HOME/liturgical_display/logs/display.log"
+
+# Write new config.yaml
+echo "Writing config.yaml with detected defaults..."
+cat > "$CONFIG_FILE" <<EOF
+# Where to save the rendered image for today
+output_image: $OUTPUT_IMAGE
+
+# VCOM voltage for your eInk display (see sticker on FPC cable, e.g. -2.51)
+vcom: $USER_VCOM
+
+# If true, Pi will shut down after updating the display (for use with timed power/RTC)
+shutdown_after_display: false
+
+# Path to log file
+log_file: $LOG_FILE
+EOF
+
+echo "config.yaml written. You can edit this file to further customize your setup."
+
+# --- SYSTEMD SETUP ---
+# Skip systemd setup in CI environments
+if [ "$CI" = "true" ] || [ "$GITHUB_ACTIONS" = "true" ]; then
+    echo "CI environment detected, skipping systemd service and timer setup."
+else
+    if [ $NON_INTERACTIVE -eq 1 ]; then
+        ENABLE_SYSTEMD="${ENABLE_SYSTEMD:-Y}"
+    else
+        echo ""
+        echo "Do you want to schedule these to update daily using systemd? (Y/n)"
+        read -r ENABLE_SYSTEMD
+    fi
+    if [ -z "$ENABLE_SYSTEMD" ] || [ "$ENABLE_SYSTEMD" = "Y" ] || [ "$ENABLE_SYSTEMD" = "y" ]; then
+        echo "Installing and enabling systemd service and timer..."
+        # Substitute {{HOME}} in service file
+        sed "s|{{HOME}}|$USER_HOME|g" systemd/liturgical.service > /tmp/liturgical.service
+        sudo cp /tmp/liturgical.service /etc/systemd/system/liturgical.service
+        sudo cp systemd/liturgical.timer /etc/systemd/system/liturgical.timer
+        sudo systemctl daemon-reload
+        sudo systemctl enable liturgical.timer
+        sudo systemctl start liturgical.timer
+        echo "Systemd service and timer installed and enabled for daily runs."
+    else
+        echo "Skipping systemd service and timer setup. You can enable it later by running these commands manually."
+    fi
 fi 

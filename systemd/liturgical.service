@@ -4,8 +4,8 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/python3 /home/pi/liturgical-display/main.py
-WorkingDirectory=/home/pi/liturgical-display
+ExecStart=/usr/bin/python3 {{HOME}}/liturgical_display/main.py
+WorkingDirectory={{HOME}}/liturgical_display
 StandardOutput=journal
 StandardError=journal
 Restart=no 
