@@ -46,7 +46,7 @@ if [ -d "IT8951-ePaper" ]; then
     cd IT8951-ePaper
     OLD_HEAD=$(git rev-parse HEAD)
     git fetch origin
-    git pull origin refactir || true
+    git pull origin main || true
     NEW_HEAD=$(git rev-parse HEAD)
     if [ "$OLD_HEAD" != "$NEW_HEAD" ]; then
         echo "IT8951-ePaper updated (HEAD changed). Rebuilding epdraw..."
@@ -60,7 +60,7 @@ else
     echo "Cloning IT8951-ePaper repository..."
     git clone https://github.com/ludwigw/IT8951-ePaper.git
     cd IT8951-ePaper
-    git checkout refactir
+    # No need to checkout refactir, use main
     REBUILD_EP=1
     cd ..
 fi
