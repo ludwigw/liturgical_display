@@ -34,32 +34,48 @@ else
     echo "ImageMagick is already installed."
 fi
 
-# Build epdraw tool if not already present
-echo "Checking for epdraw tool..."
+# Build epdraw tool if not already present or if IT8951-ePaper has updates
+REBUILD_EP=0
 if [ ! -f "bin/epdraw" ]; then
-    echo "Building epdraw tool..."
-    
-    # Check if IT8951-ePaper is already cloned
-    if [ ! -d "IT8951-ePaper" ]; then
-        echo "Cloning IT8951-ePaper repository..."
-        git clone https://github.com/ludwigw/IT8951-ePaper.git
-    fi
-    
+    echo "epdraw tool not found, will build."
+    REBUILD_EP=1
+fi
+
+if [ -d "IT8951-ePaper" ]; then
+    echo "IT8951-ePaper directory exists. Checking for updates..."
     cd IT8951-ePaper
-    echo "Checking out refactir branch..."
+    OLD_HEAD=$(git rev-parse HEAD)
+    git fetch origin
+    git pull origin refactir || true
+    NEW_HEAD=$(git rev-parse HEAD)
+    if [ "$OLD_HEAD" != "$NEW_HEAD" ]; then
+        echo "IT8951-ePaper updated (HEAD changed). Rebuilding epdraw..."
+        make clean
+        REBUILD_EP=1
+    else
+        echo "IT8951-ePaper is up to date."
+    fi
+    cd ..
+else
+    echo "Cloning IT8951-ePaper repository..."
+    git clone https://github.com/ludwigw/IT8951-ePaper.git
+    cd IT8951-ePaper
     git checkout refactir
-    
-    echo "Building epdraw..."
+    REBUILD_EP=1
+    cd ..
+fi
+
+if [ $REBUILD_EP -eq 1 ]; then
+    echo "Building epdraw tool..."
+    cd IT8951-ePaper
     make bin/epdraw
-    
     echo "Copying epdraw to project bin directory..."
     mkdir -p ../bin
     cp bin/epdraw ../bin/
     cd ..
-    
     echo "epdraw tool built successfully!"
 else
-    echo "epdraw tool already exists in bin/ directory."
+    echo "epdraw tool already exists in bin/ directory and is up to date."
 fi
 
 echo "Setup complete! Virtual environment is ready."
@@ -100,6 +116,7 @@ done
 
 # --- CONFIGURATION SETUP ---
 USER_HOME="$HOME"
+PROJECT_DIR="$(pwd)"  # Get the actual project directory where setup.sh is run from
 CONFIG_FILE="config.yaml"
 BACKUP_FILE="config.yaml.bak"
 
@@ -125,8 +142,8 @@ else
     fi
 fi
 
-OUTPUT_IMAGE="$USER_HOME/liturgical_display/today.png"
-LOG_FILE="$USER_HOME/liturgical_display/logs/display.log"
+OUTPUT_IMAGE="$PROJECT_DIR/today.png"
+LOG_FILE="$PROJECT_DIR/logs/display.log"
 
 # Write new config.yaml
 echo "Writing config.yaml with detected defaults..."
@@ -160,8 +177,8 @@ else
     fi
     if [ -z "$ENABLE_SYSTEMD" ] || [ "$ENABLE_SYSTEMD" = "Y" ] || [ "$ENABLE_SYSTEMD" = "y" ]; then
         echo "Installing and enabling systemd service and timer..."
-        # Substitute {{HOME}} in service file
-        sed "s|{{HOME}}|$USER_HOME|g" systemd/liturgical.service > /tmp/liturgical.service
+        # Substitute {{PROJECT_DIR}} in service file with actual project directory
+        sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/liturgical.service > /tmp/liturgical.service
         sudo cp /tmp/liturgical.service /etc/systemd/system/liturgical.service
         sudo cp systemd/liturgical.timer /etc/systemd/system/liturgical.timer
         sudo systemctl daemon-reload
