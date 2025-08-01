@@ -273,7 +273,7 @@ FUNNEL_EXIT=1
 
 # Use background flag to run funnel in background
 echo "Starting funnel in background..."
-FUNNEL_OUTPUT=$(tailscale funnel --bg $PORT 2>&1)
+FUNNEL_OUTPUT=$(sudo tailscale funnel --bg $PORT 2>&1)
 FUNNEL_EXIT=$?
 
 # Verify the funnel was actually created
