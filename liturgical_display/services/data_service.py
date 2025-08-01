@@ -52,30 +52,10 @@ class DataService:
             date_str = target_date.strftime("%Y-%m-%d")
             log(f"[data_service.py] Getting liturgical data for {date_str}")
             
-            # Use the liturgical-calendar pipeline's data preparation logic
-            # This ensures we use the same logic as the image generation
-            from liturgical_calendar.image_generation.pipeline import ImageGenerationPipeline
-            pipeline = ImageGenerationPipeline()
-            pipeline_data = pipeline._prepare_data(date_str)
-            
-            # Extract the combined data using the same logic as the image generation
-            feast_info = pipeline_data['info']
-            artwork_info = pipeline_data['artwork']
-            
-            # Use the same title logic as the image generation pipeline
-            if artwork_info and artwork_info.get('name', ''):
-                title = artwork_info.get('name', '')
-            else:
-                title = target_date.strftime('%A')
-            
-            # Combine the data
-            data = feast_info.copy()
-            data['name'] = title
-            
-            # Add artwork URL if available
-            if artwork_info and artwork_info.get('url'):
-                data['url'] = artwork_info['url']
-                data['wikipedia_url'] = artwork_info['url']
+            # Use the new public API for combined feast and artwork data
+            from liturgical_calendar.services.feast_service import FeastService
+            feast_service = FeastService()
+            data = feast_service.get_combined_liturgical_info(date_str)
             
             # Add date information
             data['date'] = date_str
