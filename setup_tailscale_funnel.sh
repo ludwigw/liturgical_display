@@ -8,7 +8,6 @@
 # Usage: ./setup_tailscale_funnel.sh [OPTIONS]
 #
 # Options:
-#   --hostname <name>    Specify the hostname for the funnel (e.g., "liturgical-display")
 #   --port <port>        Specify the local port (default: 8080)
 #   --help               Show this help message
 #
@@ -32,7 +31,6 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Default values
-HOSTNAME=""
 PORT="8080"
 
 # Help function
@@ -43,13 +41,12 @@ Usage: $0 [OPTIONS]
 Setup Tailscale Funnel for the liturgical display web server.
 
 OPTIONS:
-    --hostname <name>    Specify the hostname for the funnel (e.g., "liturgical-display")
     --port <port>        Specify the local port (default: 8080)
     --help               Show this help message
 
 EXAMPLES:
-    $0 --hostname liturgical-display
-    $0 --hostname my-liturgical --port 8080
+    $0 --port 8080
+    $0                    # Use default port 8080
 
 PREREQUISITES:
     1. Tailscale installed and authenticated
@@ -63,10 +60,6 @@ EOF
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --hostname)
-            HOSTNAME="$2"
-            shift 2
-            ;;
         --port)
             PORT="$2"
             shift 2
@@ -188,20 +181,16 @@ else
     echo "  python3 -m liturgical_display.web_server"
 fi
 
-# 4. Set default hostname (will be assigned by Tailscale)
-if [ -z "$HOSTNAME" ]; then
-    HOSTNAME="liturgical-display"
-    echo ""
-    echo "4. Using default hostname: $HOSTNAME"
-    echo "Note: Tailscale will assign the actual hostname automatically"
-fi
+# 4. Note about hostname assignment
+echo ""
+echo "4. Hostname will be assigned automatically by Tailscale"
 
 # 5. Check if Funnel is already running
 echo ""
 echo "5. Checking existing Funnel configuration..."
-EXISTING_FUNNEL=$(tailscale funnel list 2>/dev/null | grep "$HOSTNAME" || echo "")
+EXISTING_FUNNEL=$(tailscale funnel list 2>/dev/null | grep "$PORT" || echo "")
 if [ -n "$EXISTING_FUNNEL" ]; then
-    print_status "WARN" "Funnel for hostname '$HOSTNAME' already exists"
+    print_status "WARN" "Funnel for port $PORT already exists"
     echo "Existing configuration:"
     echo "$EXISTING_FUNNEL"
     echo ""
@@ -264,7 +253,7 @@ print_status "PASS" "Funnel is available on your account"
 # 6. Start the Funnel
 echo ""
 echo "6. Starting Tailscale Funnel..."
-echo "Starting funnel for hostname: $HOSTNAME on port: $PORT"
+echo "Starting funnel on port: $PORT"
 echo "This may take a moment..."
 
 # Start the funnel - use background flag to avoid hanging
@@ -296,10 +285,10 @@ if [ $FUNNEL_EXIT -eq 0 ]; then
             echo "   (Check 'tailscale funnel status' for the exact URL)"
         fi
         echo ""
-        echo "📋 Useful commands:"
-        echo "   tailscale funnel list                    # List active funnels"
-        echo "   tailscale funnel stop $HOSTNAME         # Stop this funnel"
-        echo "   tailscale funnel $HOSTNAME:$PORT        # Restart this funnel"
+            echo "📋 Useful commands:"
+    echo "   tailscale funnel list                    # List active funnels"
+    echo "   tailscale funnel status                  # Check funnel status"
+    echo "   tailscale funnel reset                   # Reset funnel configuration"
         echo ""
         echo "🔒 Security notes:"
         echo "   - The funnel is only accessible to devices on your Tailnet"
@@ -334,7 +323,7 @@ else
     echo "1. Check if web server is running: curl http://localhost:$PORT/"
     echo "2. Check funnel status: tailscale funnel status"
     echo "3. Check funnel list: tailscale funnel list"
-    echo "4. Try manual funnel command: tailscale funnel $HOSTNAME:$PORT"
+    echo "4. Try manual funnel command: tailscale funnel --bg $PORT"
     exit 1
 fi
 
