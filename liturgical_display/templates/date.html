@@ -5,9 +5,9 @@
 {% block content %}
 <div class="header">
     {% if data.season %}
-    <div class="header-season">{{ data.season.upper() }} — {{ date.strftime('%-d %B, %Y') }}</div>
+    <div class="header-season">{{ data.season }} — <span class="header-date">{{ date.strftime('%-d %B, %Y') }}</span></div>
     {% else %}
-    <div class="header-season">{{ date.strftime('%-d %B, %Y') }}</div>
+    <div class="header-date">{{ date.strftime('%-d %B, %Y') }}</div>
     {% endif %}
 </div>
 
@@ -19,18 +19,20 @@
         <img src="/api/artwork/{{ date.strftime('%Y-%m-%d') }}" alt="Liturgical Artwork for {{ date.strftime('%B %d, %Y') }}" class="liturgical-image">
     </div>
     {% elif next_artwork %}
-    <div class="image-section next-artwork-section">
+    <a href="/{{ next_artwork.date_obj.strftime('%Y-%m-%d') if next_artwork.date_obj else '' }}" class="image-section next-artwork-section">
         <div class="next-artwork-container">
             <img src="/api/next-artwork/{{ date.strftime('%Y-%m-%d') }}" alt="Next Liturgical Artwork: {{ next_artwork.name }}" class="liturgical-image next-artwork-thumbnail">
-            <div class="next-artwork-label">
-                <span class="next-prefix">NEXT:</span>
-                <span class="next-title">{{ next_artwork.name }}</span>
+            <div class="next-artwork-label-wrapper">
+                <div class="next-artwork-label">
+                    <span class="next-prefix">NEXT:</span>
+                    <span class="next-title">{{ next_artwork.name }}</span>
+                </div>
+                {% if next_artwork.date %}
+                <div class="next-artwork-date">{{ next_artwork.date.upper() }}</div>
+                {% endif %}
             </div>
-            {% if next_artwork.date %}
-            <div class="next-artwork-date">{{ next_artwork.date.upper() }}</div>
-            {% endif %}
         </div>
-    </div>
+    </a>
     {% endif %}
 
     {% if data.name %}

@@ -171,6 +171,7 @@ class DataService:
         """
         try:
             from liturgical_calendar.core.artwork_manager import ArtworkManager
+            from datetime import datetime
             
             date_str = target_date.strftime("%Y-%m-%d")
             artwork_manager = ArtworkManager()
@@ -182,9 +183,19 @@ class DataService:
                 if not Path(artwork_path).is_absolute():
                     artwork_path = str(Path(self.cache_dir).parent / artwork_path)
                 
-                # Return the next artwork info with absolute path
+                # Parse the date string to create a date object
+                date_obj = None
+                if next_artwork.get('date'):
+                    try:
+                        # Parse date string like "5 August, 2025"
+                        date_obj = datetime.strptime(next_artwork['date'], '%d %B, %Y').date()
+                    except ValueError:
+                        log(f"[data_service.py] Could not parse date: {next_artwork['date']}")
+                
+                # Return the next artwork info with absolute path and date object
                 next_artwork_info = next_artwork.copy()
                 next_artwork_info['cached_file'] = artwork_path
+                next_artwork_info['date_obj'] = date_obj
                 log(f"[data_service.py] Found next artwork: {artwork_path}")
                 return next_artwork_info
             else:

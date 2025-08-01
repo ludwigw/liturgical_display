@@ -96,7 +96,7 @@ def today():
         if not data_service.get_artwork_path(today_date):
             next_artwork_info = data_service.get_next_artwork_info(today_date)
         
-        return render_template('today.html', 
+        return render_template('date.html', 
                              data=liturgical_data, 
                              wikipedia_summary=wikipedia_summary,
                              date=today_date,

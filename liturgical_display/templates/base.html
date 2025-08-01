@@ -44,6 +44,7 @@
             font-size: 18px;
             color: #4a4a4a;
             margin: 0;
+            text-transform: initial;
         }
         .feast-title {
             font-family: 'HappyTimes', serif;
@@ -173,13 +174,19 @@
             position: relative;
         }
         .next-artwork-thumbnail {
-            max-width: 50%;
+            max-width: 30%;
             height: auto;
-            opacity: 0.7;
+            opacity: 0.2;
+        }
+        .next-artwork-label-wrapper {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translateX(-50%) translateY(-50%);
+            margin-left: -1.75em;
         }
         .next-artwork-label {
             margin-top: 8px;
-            text-align: center;
         }
         .next-prefix {
             font-family: 'HankenGrotesk', sans-serif;
@@ -199,8 +206,7 @@
             font-size: 14px;
             color: #4a4a4a;
             text-transform: uppercase;
-            margin-top: 4px;
-            text-align: center;
+            margin-left: 7em;
         }
 
         .input {
