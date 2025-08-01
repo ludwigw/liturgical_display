@@ -387,7 +387,7 @@ server_thread = threading.Thread(target=start_server, daemon=True)
 server_thread.start()
 
 # Wait for server to start
-time.sleep(2)
+time.sleep(3)
 
 try:
     # Test basic connectivity
@@ -408,6 +408,14 @@ else
     else
         print_status "WARN" "Web server test failed (may be due to port conflicts)"
     fi
+fi
+
+# 17. Check web server configuration
+echo "17. Checking web server configuration..."
+if [ -f "web_server_config.yaml" ]; then
+    print_status "PASS" "Web server configuration file exists"
+else
+    print_status "INFO" "Web server configuration file not found (will be created by setup.sh)"
 fi
 
 echo ""

@@ -4,13 +4,11 @@ import os
 import sys
 import subprocess
 import logging
-import threading
 from logging.handlers import RotatingFileHandler
 
 from .updater import update_calendar_package
 from .calendar import render_today
 from .display import display_image
-from .web_server import run_web_server
 
 def load_config():
     config_path = os.environ.get('LITURGICAL_CONFIG', 'config.yaml')
@@ -54,15 +52,9 @@ def main():
         logger.error("Failed to display image. Aborting.")
         return 1
 
-    # Start web server if enabled
-    web_config = config.get('web_server', {})
-    if web_config.get('enabled', True):  # Default to enabled
-        logger.info("Starting web server...")
-        web_thread = threading.Thread(target=run_web_server, args=(config,), daemon=True)
-        web_thread.start()
-        logger.info("Web server started in background thread")
-    else:
-        logger.info("Web server disabled in config")
+    # Note: Web server is now handled by a separate systemd service
+    # (liturgical-web.service) that runs continuously
+    logger.info("Display update complete. Web server runs as separate service.")
 
     if config.get('shutdown_after_display', False):
         logger.info("Shutting down system as requested in config...")

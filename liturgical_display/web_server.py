@@ -28,15 +28,25 @@ logger = logging.getLogger(__name__)
 def create_app(config=None):
     """Create and configure the Flask application."""
     if config is None:
-        # Load default config
-        from .calendar import load_config
-        config = load_config()
+        # Load web server config
+        config_path = os.environ.get('LITURGICAL_CONFIG', 'web_server_config.yaml')
+        try:
+            with open(config_path) as f:
+                config = yaml.safe_load(f)
+        except FileNotFoundError:
+            # Fallback to default config
+            config = {
+                'host': '0.0.0.0',
+                'port': 8080,
+                'debug': False,
+                'auto_reload': False
+            }
     
     # Configure Flask app
-    web_config = config.get('web_server', {})
-    app.config['HOST'] = web_config.get('host', '0.0.0.0')
-    app.config['PORT'] = web_config.get('port', 8080)
-    app.config['DEBUG'] = web_config.get('debug', True)  # Enable debug mode for auto-reload
+    app.config['HOST'] = config.get('host', '0.0.0.0')
+    app.config['PORT'] = config.get('port', 8080)
+    app.config['DEBUG'] = config.get('debug', False)
+    app.config['AUTO_RELOAD'] = config.get('auto_reload', False)
     
     # Add context processor for current time and data service
     @app.context_processor
@@ -276,17 +286,20 @@ def run_web_server(config=None):
     host = app.config['HOST']
     port = app.config['PORT']
     debug = app.config['DEBUG']
+    auto_reload = app.config['AUTO_RELOAD']
     
-    log(f"[web_server.py] Starting web server on {host}:{port} (debug={debug})")
-    print(f"Flask debug mode: {debug}")
-    print(f"Auto-reloader enabled: True")
-    print(f"Watching for changes in: {os.path.dirname(os.path.abspath(__file__))}")
+    log(f"[web_server.py] Starting web server on {host}:{port} (debug={debug}, auto_reload={auto_reload})")
     
-    # Force debug mode for development
-    app.run(host=host, port=port, debug=True, use_reloader=True, extra_files=[
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'),
-        os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
-    ])
+    if auto_reload:
+        print(f"Auto-reloader enabled: True")
+        print(f"Watching for changes in: {os.path.dirname(os.path.abspath(__file__))}")
+        app.run(host=host, port=port, debug=True, use_reloader=True, extra_files=[
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates'),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static')
+        ])
+    else:
+        print(f"Production mode: debug=False, auto_reload=False")
+        app.run(host=host, port=port, debug=False, use_reloader=False)
 
 if __name__ == "__main__":
     run_web_server() 

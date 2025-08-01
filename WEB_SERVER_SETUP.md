@@ -8,7 +8,20 @@ The liturgical display includes a Flask web server that provides:
 - Web interface for viewing liturgical information
 - API endpoints for programmatic access
 - "Next feast" UI when no artwork is available for the current date
-- Auto-reload capability for development
+- Continuous availability (runs as separate service)
+
+## Architecture
+
+The web server runs as a **separate systemd service** from the main display update process:
+
+- **Main service** (`liturgical.service`): Runs daily to update the eInk display
+- **Web server service** (`liturgical-web.service`): Runs continuously to provide web access
+- **Timer** (`liturgical.timer`): Triggers the main service daily at 12:01 AM
+
+This separation ensures:
+- Web access is always available, even between display updates
+- Display updates don't interrupt web service
+- Each service can be managed independently
 
 ## Automatic Setup
 
@@ -20,41 +33,54 @@ The web server is automatically configured during the main setup process:
 
 This will:
 1. Install web server dependencies (Flask, Jinja2, requests)
-2. Configure web server settings in `config.yaml`
-3. Optionally enable the web server as a systemd service
+2. Create separate web server configuration (`web_server_config.yaml`)
+3. Enable the web server as a systemd service
 
 ## Manual Configuration
 
 ### Web Server Settings
 
-The web server configuration is stored in `config.yaml`:
+The web server configuration is stored in `web_server_config.yaml`:
 
 ```yaml
-web_server:
-  enabled: true
-  host: "0.0.0.0"
-  port: 8080
-  debug: false
+# Web server configuration
+host: "0.0.0.0"
+port: 8080
+debug: false
+log_level: "INFO"
+cache_dir: "cache"
+wikipedia_cache_dir: "cache/wikipedia"
+auto_reload: false
 ```
 
 ### Starting the Web Server
 
-#### Option 1: As part of the main application
-```bash
-source venv/bin/activate
-python3 -m liturgical_display.main
-```
-
-#### Option 2: Standalone web server
+#### Option 1: Standalone web server
 ```bash
 source venv/bin/activate
 python3 -m liturgical_display.web_server
 ```
 
-#### Option 3: Development mode with auto-reload
+#### Option 2: Development mode with auto-reload
 ```bash
+# Enable auto-reload in web_server_config.yaml
+auto_reload: true
+
+# Run the web server
 source venv/bin/activate
-python3 run_web_debug.py
+python3 -m liturgical_display.web_server
+```
+
+#### Option 3: Using the systemd service (recommended)
+```bash
+# Start the service
+sudo systemctl start liturgical-web.service
+
+# Check status
+sudo systemctl status liturgical-web.service
+
+# View logs
+sudo journalctl -u liturgical-web.service -f
 ```
 
 ### Systemd Service
