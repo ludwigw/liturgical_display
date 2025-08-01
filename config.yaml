@@ -3,4 +3,11 @@
 output_image: /home/pi/liturgical_display/today.png
 vcom: -1.18
 shutdown_after_display: false
-log_file: /home/pi/liturgical_display/logs/display.log 
+log_file: /home/pi/liturgical_display/logs/display.log
+
+# Web server configuration
+web_server:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+  debug: false 

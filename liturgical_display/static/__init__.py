@@ -1,0 +1,1 @@
+# Static files package for liturgical_display 
