@@ -159,6 +159,13 @@ shutdown_after_display: false
 
 # Path to log file
 log_file: $LOG_FILE
+
+# Web server configuration
+web_server:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+  debug: false
 EOF
 
 echo "config.yaml written. You can edit this file to further customize your setup."
@@ -185,6 +192,28 @@ else
         sudo systemctl enable liturgical.timer
         sudo systemctl start liturgical.timer
         echo "Systemd service and timer installed and enabled for daily runs."
+        
+        # Ask about web server service
+        if [ $NON_INTERACTIVE -eq 1 ]; then
+            ENABLE_WEB_SERVICE="${ENABLE_WEB_SERVICE:-Y}"
+        else
+            echo ""
+            echo "Do you want to enable the web server to start automatically on boot? (Y/n)"
+            read -r ENABLE_WEB_SERVICE
+        fi
+        
+        if [ -z "$ENABLE_WEB_SERVICE" ] || [ "$ENABLE_WEB_SERVICE" = "Y" ] || [ "$ENABLE_WEB_SERVICE" = "y" ]; then
+            echo "Installing and enabling web server service..."
+            sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/liturgical-web.service > /tmp/liturgical-web.service
+            sudo cp /tmp/liturgical-web.service /etc/systemd/system/liturgical-web.service
+            sudo systemctl daemon-reload
+            sudo systemctl enable liturgical-web.service
+            sudo systemctl start liturgical-web.service
+            echo "Web server service installed and enabled for automatic startup."
+            echo "Web server will be available at: http://localhost:8080"
+        else
+            echo "Skipping web server service setup. You can enable it later manually."
+        fi
     else
         echo "Skipping systemd service and timer setup. You can enable it later by running these commands manually."
     fi

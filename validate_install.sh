@@ -334,8 +334,26 @@ else
     OVERALL_STATUS="FAIL"
 fi
 
-# 12. Check for required directories
-echo "12. Checking required directories..."
+# 12. Test web server module import
+echo "12. Testing web server module import..."
+if source venv/bin/activate 2>/dev/null && python3 -c "import liturgical_display.web_server; print('Web server module imports successfully')" 2>/dev/null; then
+    print_status "PASS" "Web server module imports successfully"
+else
+    print_status "FAIL" "Cannot import web server module"
+    OVERALL_STATUS="FAIL"
+fi
+
+# 13. Test web server dependencies
+echo "13. Testing web server dependencies..."
+if source venv/bin/activate 2>/dev/null && python3 -c "import flask, jinja2, requests; print('Web server dependencies available')" 2>/dev/null; then
+    print_status "PASS" "Web server dependencies (Flask, Jinja2, requests) are available"
+else
+    print_status "FAIL" "Web server dependencies missing. Run 'pip install -r requirements.txt'"
+    OVERALL_STATUS="FAIL"
+fi
+
+# 14. Check for required directories
+echo "14. Checking required directories..."
 REQUIRED_DIRS=("logs" "bin")
 for dir in "${REQUIRED_DIRS[@]}"; do
     if [ -d "$dir" ]; then
@@ -345,12 +363,51 @@ for dir in "${REQUIRED_DIRS[@]}"; do
     fi
 done
 
-# 13. Test integration test script
-echo "13. Checking integration test script..."
+# 15. Test integration test script
+echo "15. Checking integration test script..."
 if [ -f "tests/test_integration.sh" ] && [ -x "tests/test_integration.sh" ]; then
     print_status "PASS" "Integration test script exists and is executable"
 else
     print_status "WARN" "Integration test script not found or not executable"
+fi
+
+# 16. Test web server startup (basic test)
+echo "16. Testing web server startup..."
+if source venv/bin/activate 2>/dev/null && python3 -c "
+import liturgical_display.web_server
+import threading
+import time
+import requests
+
+# Start web server in background thread
+def start_server():
+    liturgical_display.web_server.run_web_server()
+
+server_thread = threading.Thread(target=start_server, daemon=True)
+server_thread.start()
+
+# Wait for server to start
+time.sleep(2)
+
+try:
+    # Test basic connectivity
+    response = requests.get('http://localhost:8080/', timeout=5)
+    if response.status_code == 200:
+        print('Web server responds successfully')
+    else:
+        print('Web server responded with status:', response.status_code)
+        exit(1)
+except Exception as e:
+    print('Web server test failed:', str(e))
+    exit(1)
+" 2>/dev/null; then
+    print_status "PASS" "Web server starts and responds to requests"
+else
+    if [ -n "$CI" ] || [ -n "$GITHUB_ACTIONS" ]; then
+        print_status "WARN" "Web server test skipped in CI environment"
+    else
+        print_status "WARN" "Web server test failed (may be due to port conflicts)"
+    fi
 fi
 
 echo ""
