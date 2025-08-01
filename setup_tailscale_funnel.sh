@@ -85,6 +85,14 @@ done
 
 echo "🔧 Setting up Tailscale Funnel for liturgical display web server..."
 echo "================================================"
+echo ""
+echo "This script will:"
+echo "1. Check if Tailscale is installed and authenticated"
+echo "2. Start Tailscale if it's offline"
+echo "3. Verify the web server is running"
+echo "4. Set up a secure funnel for remote access"
+echo "5. Provide you with a public URL for your display"
+echo ""
 
 # Function to print status
 print_status() {
@@ -116,16 +124,30 @@ else
     exit 1
 fi
 
-# 2. Check if Tailscale is authenticated
+# 2. Check if Tailscale is authenticated and online
 echo ""
-echo "2. Checking Tailscale authentication..."
+echo "2. Checking Tailscale authentication and status..."
 if tailscale status >/dev/null 2>&1; then
     print_status "PASS" "Tailscale is authenticated"
+    
+    # Check if Tailscale is online
     TAILSCALE_STATUS=$(tailscale status --json 2>/dev/null | grep -o '"Online":true' || echo "")
     if [ -n "$TAILSCALE_STATUS" ]; then
         print_status "PASS" "Tailscale is online"
     else
-        print_status "WARN" "Tailscale appears to be offline"
+        print_status "WARN" "Tailscale appears to be offline, attempting to start..."
+        echo "Starting Tailscale..."
+        if sudo tailscale up >/dev/null 2>&1; then
+            print_status "PASS" "Tailscale started successfully"
+            # Wait a moment for connection to establish
+            sleep 3
+        else
+            print_status "FAIL" "Failed to start Tailscale"
+            echo ""
+            echo "Please start Tailscale manually:"
+            echo "  sudo tailscale up"
+            exit 1
+        fi
     fi
 else
     print_status "FAIL" "Tailscale is not authenticated"
@@ -183,9 +205,21 @@ if [ -n "$EXISTING_FUNNEL" ]; then
     fi
 fi
 
-# 6. Start the Funnel
+# 6. Verify Tailscale is fully connected
 echo ""
-echo "6. Starting Tailscale Funnel..."
+echo "6. Verifying Tailscale connection..."
+TAILSCALE_STATUS=$(tailscale status --json 2>/dev/null | grep -o '"Online":true' || echo "")
+if [ -z "$TAILSCALE_STATUS" ]; then
+    print_status "FAIL" "Tailscale is not online. Please check your connection."
+    echo ""
+    echo "Try running: sudo tailscale up"
+    exit 1
+fi
+print_status "PASS" "Tailscale is online and ready for funnel setup"
+
+# 7. Start the Funnel
+echo ""
+echo "7. Starting Tailscale Funnel..."
 echo "Starting funnel for hostname: $HOSTNAME on port: $PORT"
 echo "This may take a moment..."
 
@@ -208,6 +242,11 @@ if [ $FUNNEL_EXIT -eq 0 ]; then
     echo "   - The funnel is only accessible to devices on your Tailnet"
     echo "   - You can control access through Tailscale ACLs"
     echo "   - The connection is encrypted end-to-end"
+    echo ""
+    echo "✅ Tailscale Funnel setup complete!"
+    echo ""
+    echo "Your liturgical display web server is now accessible from anywhere"
+    echo "through your secure Tailscale Funnel."
 else
     print_status "FAIL" "Failed to start Tailscale Funnel"
     echo "Error output:"

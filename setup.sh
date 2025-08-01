@@ -189,6 +189,10 @@ else
         # Install and enable web server service (separate from main service)
         echo "Installing and enabling web server service..."
         
+        # Get current user for systemd service
+        CURRENT_USER=$(whoami)
+        echo "Using current user '$CURRENT_USER' for systemd services"
+        
         # Copy web server config
         if [ ! -f "web_server_config.yaml" ]; then
             echo "Creating web server configuration file..."
@@ -204,9 +208,11 @@ auto_reload: false
 EOF
         fi
         
-        # Install systemd service
-        sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/liturgical-web.service > /tmp/liturgical-web.service
+        # Install systemd service with correct user
+        sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/liturgical-web.service | sed "s|User=pi|User=$CURRENT_USER|g" > /tmp/liturgical-web.service
+        sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/liturgical.service | sed "s|User=pi|User=$CURRENT_USER|g" > /tmp/liturgical.service
         sudo cp /tmp/liturgical-web.service /etc/systemd/system/liturgical-web.service
+        sudo cp /tmp/liturgical.service /etc/systemd/system/liturgical.service
         sudo systemctl daemon-reload
         sudo systemctl enable liturgical-web.service
         sudo systemctl start liturgical-web.service
