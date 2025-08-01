@@ -130,9 +130,23 @@ echo "2. Checking Tailscale authentication and status..."
 if tailscale status >/dev/null 2>&1; then
     print_status "PASS" "Tailscale is authenticated"
     
-    # Check if Tailscale is online
-    TAILSCALE_STATUS=$(tailscale status --json 2>/dev/null | grep -o '"Online":true' || echo "")
-    if [ -n "$TAILSCALE_STATUS" ]; then
+    # Check if Tailscale is online using multiple methods
+    TAILSCALE_ONLINE=false
+    
+    # Method 1: Check if we have an IP address assigned
+    TAILSCALE_IP=$(tailscale status --json 2>/dev/null | grep -o '"TailscaleIPs":\["[^"]*"' | head -1 | grep -o '"[^"]*"' | head -1 | tr -d '"')
+    if [ -n "$TAILSCALE_IP" ] && [ "$TAILSCALE_IP" != "null" ]; then
+        TAILSCALE_ONLINE=true
+    fi
+    
+    # Method 2: Check if we can reach the Tailscale DNS
+    if [ "$TAILSCALE_ONLINE" = false ]; then
+        if ping -c 1 -W 2 100.100.100.100 >/dev/null 2>&1; then
+            TAILSCALE_ONLINE=true
+        fi
+    fi
+    
+    if [ "$TAILSCALE_ONLINE" = true ]; then
         print_status "PASS" "Tailscale is online"
     else
         print_status "WARN" "Tailscale appears to be offline, attempting to start..."
@@ -208,9 +222,30 @@ fi
 # 6. Verify Tailscale is fully connected
 echo ""
 echo "6. Verifying Tailscale connection..."
-TAILSCALE_STATUS=$(tailscale status --json 2>/dev/null | grep -o '"Online":true' || echo "")
-if [ -z "$TAILSCALE_STATUS" ]; then
+# Try multiple methods to check if Tailscale is online
+TAILSCALE_ONLINE=false
+
+# Method 1: Check if we can get status without errors
+if tailscale status >/dev/null 2>&1; then
+    # Method 2: Check if we have an IP address assigned
+    TAILSCALE_IP=$(tailscale status --json 2>/dev/null | grep -o '"TailscaleIPs":\["[^"]*"' | head -1 | grep -o '"[^"]*"' | head -1 | tr -d '"')
+    if [ -n "$TAILSCALE_IP" ] && [ "$TAILSCALE_IP" != "null" ]; then
+        TAILSCALE_ONLINE=true
+    fi
+    
+    # Method 3: Check if we can reach the Tailscale DNS
+    if [ "$TAILSCALE_ONLINE" = false ]; then
+        if ping -c 1 -W 2 100.100.100.100 >/dev/null 2>&1; then
+            TAILSCALE_ONLINE=true
+        fi
+    fi
+fi
+
+if [ "$TAILSCALE_ONLINE" = false ]; then
     print_status "FAIL" "Tailscale is not online. Please check your connection."
+    echo ""
+    echo "Current Tailscale status:"
+    tailscale status 2>/dev/null || echo "Could not get Tailscale status"
     echo ""
     echo "Try running: sudo tailscale up"
     exit 1
