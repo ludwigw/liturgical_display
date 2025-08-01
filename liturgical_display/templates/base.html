@@ -175,6 +175,7 @@
         }
         .next-artwork-thumbnail {
             max-width: 30%;
+            min-width: 300px;
             height: auto;
             opacity: 0.2;
         }
@@ -182,11 +183,15 @@
             position: absolute;
             top: 50%;
             left: 50%;
+            text-align: left;
             transform: translateX(-50%) translateY(-50%);
-            margin-left: -1.75em;
+            display: inline-flex;
+            align-items: baseline;
         }
         .next-artwork-label {
             margin-top: 8px;
+            display: flex;
+            flex-direction: column;
         }
         .next-prefix {
             font-family: 'HankenGrotesk', sans-serif;
@@ -194,19 +199,18 @@
             color: #4a4a4a;
             text-transform: uppercase;
             font-weight: normal;
+            margin-right: 12px;
         }
-        .next-title {
+        .next-artwork-title {
             font-family: 'HappyTimes', serif;
             font-size: 18px;
             color: #4a4a4a;
-            margin-left: 4px;
         }
         .next-artwork-date {
             font-family: 'HankenGrotesk', sans-serif;
             font-size: 14px;
             color: #4a4a4a;
             text-transform: uppercase;
-            margin-left: 7em;
         }
 
         .input {

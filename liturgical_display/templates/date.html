@@ -23,13 +23,14 @@
         <div class="next-artwork-container">
             <img src="/api/next-artwork/{{ date.strftime('%Y-%m-%d') }}" alt="Next Liturgical Artwork: {{ next_artwork.name }}" class="liturgical-image next-artwork-thumbnail">
             <div class="next-artwork-label-wrapper">
+                <div class="next-prefix">NEXT:</div>
+
                 <div class="next-artwork-label">
-                    <span class="next-prefix">NEXT:</span>
-                    <span class="next-title">{{ next_artwork.name }}</span>
+                    <span class="next-artwork-title">{{ next_artwork.name }}</span>
+                    {% if next_artwork.date %}
+                    <div class="next-artwork-date">{{ next_artwork.date.upper() }}</div>
+                    {% endif %}
                 </div>
-                {% if next_artwork.date %}
-                <div class="next-artwork-date">{{ next_artwork.date.upper() }}</div>
-                {% endif %}
             </div>
         </div>
     </a>
