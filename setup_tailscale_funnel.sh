@@ -90,8 +90,9 @@ echo "This script will:"
 echo "1. Check if Tailscale is installed and authenticated"
 echo "2. Start Tailscale if it's offline"
 echo "3. Verify the web server is running"
-echo "4. Set up a secure funnel for remote access"
-echo "5. Provide you with a public URL for your display"
+echo "4. Check if Funnel is enabled on your account"
+echo "5. Set up a secure funnel for remote access"
+echo "6. Provide you with a public URL for your display"
 echo ""
 
 # Function to print status
@@ -252,36 +253,84 @@ if [ "$TAILSCALE_ONLINE" = false ]; then
 fi
 print_status "PASS" "Tailscale is online and ready for funnel setup"
 
-# 7. Start the Funnel
+# 7. Check if Funnel is enabled on the account
 echo ""
-echo "7. Starting Tailscale Funnel..."
+echo "7. Checking Funnel availability..."
+FUNNEL_AVAILABLE=$(tailscale funnel list 2>/dev/null | head -1)
+if [[ "$FUNNEL_AVAILABLE" == *"Funnel is not enabled"* ]] || [[ "$FUNNEL_AVAILABLE" == *"not enabled"* ]]; then
+    print_status "FAIL" "Tailscale Funnel is not enabled on your account"
+    echo ""
+    echo "To enable Funnel on your account:"
+    echo "1. Go to https://login.tailscale.com/admin/settings/keys"
+    echo "2. Enable 'Tailscale Funnel'"
+    echo "3. Try running this script again"
+    exit 1
+fi
+print_status "PASS" "Funnel is available on your account"
+
+# 8. Start the Funnel
+echo ""
+echo "8. Starting Tailscale Funnel..."
 echo "Starting funnel for hostname: $HOSTNAME on port: $PORT"
 echo "This may take a moment..."
 
-# Start the funnel
+# Start the funnel - try different command formats
+FUNNEL_OUTPUT=""
+FUNNEL_EXIT=1
+
+# Try the standard funnel command
+echo "Attempting to start funnel..."
 FUNNEL_OUTPUT=$(tailscale funnel $HOSTNAME:$PORT 2>&1)
 FUNNEL_EXIT=$?
 
+# If that fails, try alternative syntax
+if [ $FUNNEL_EXIT -ne 0 ]; then
+    echo "Standard command failed, trying alternative syntax..."
+    FUNNEL_OUTPUT=$(tailscale funnel --hostname=$HOSTNAME --port=$PORT 2>&1)
+    FUNNEL_EXIT=$?
+fi
+
+# Verify the funnel was actually created
 if [ $FUNNEL_EXIT -eq 0 ]; then
-    print_status "PASS" "Tailscale Funnel started successfully"
-    echo ""
-    echo "🎉 Your liturgical display is now accessible at:"
-    echo "   https://$HOSTNAME.$(tailscale status --json 2>/dev/null | grep -o '"TailnetName":"[^"]*"' | cut -d'"' -f4).ts.net"
-    echo ""
-    echo "📋 Useful commands:"
-    echo "   tailscale funnel list                    # List active funnels"
-    echo "   tailscale funnel stop $HOSTNAME         # Stop this funnel"
-    echo "   tailscale funnel $HOSTNAME:$PORT        # Restart this funnel"
-    echo ""
-    echo "🔒 Security notes:"
-    echo "   - The funnel is only accessible to devices on your Tailnet"
-    echo "   - You can control access through Tailscale ACLs"
-    echo "   - The connection is encrypted end-to-end"
-    echo ""
-    echo "✅ Tailscale Funnel setup complete!"
-    echo ""
-    echo "Your liturgical display web server is now accessible from anywhere"
-    echo "through your secure Tailscale Funnel."
+    echo "Verifying funnel was created..."
+    sleep 2
+    
+    # Check if the funnel appears in the list
+    FUNNEL_VERIFIED=$(tailscale funnel list 2>/dev/null | grep -i "$HOSTNAME" || echo "")
+    if [ -n "$FUNNEL_VERIFIED" ]; then
+        print_status "PASS" "Tailscale Funnel started successfully"
+        echo ""
+        echo "🎉 Your liturgical display is now accessible at:"
+        TAILNET_NAME=$(tailscale status --json 2>/dev/null | grep -o '"TailnetName":"[^"]*"' | cut -d'"' -f4)
+        if [ -n "$TAILNET_NAME" ]; then
+            echo "   https://$HOSTNAME.$TAILNET_NAME.ts.net"
+        else
+            echo "   https://$HOSTNAME.your-tailnet.ts.net"
+        fi
+        echo ""
+        echo "📋 Useful commands:"
+        echo "   tailscale funnel list                    # List active funnels"
+        echo "   tailscale funnel stop $HOSTNAME         # Stop this funnel"
+        echo "   tailscale funnel $HOSTNAME:$PORT        # Restart this funnel"
+        echo ""
+        echo "🔒 Security notes:"
+        echo "   - The funnel is only accessible to devices on your Tailnet"
+        echo "   - You can control access through Tailscale ACLs"
+        echo "   - The connection is encrypted end-to-end"
+        echo ""
+        echo "✅ Tailscale Funnel setup complete!"
+    else
+        print_status "WARN" "Funnel command succeeded but funnel not found in list"
+        echo "Command output:"
+        echo "$FUNNEL_OUTPUT"
+        echo ""
+        echo "Current funnel list:"
+        tailscale funnel list 2>/dev/null || echo "Could not get funnel list"
+        echo ""
+        echo "The funnel may still be starting up. Try checking again in a moment:"
+        echo "  tailscale funnel list"
+        echo "  tailscale funnel status"
+    fi
 else
     print_status "FAIL" "Failed to start Tailscale Funnel"
     echo "Error output:"
@@ -291,16 +340,16 @@ else
     echo "1. Funnel may not be enabled on your Tailscale account"
     echo "2. Hostname may already be in use"
     echo "3. Port may not be accessible"
+    echo "4. Web server may not be running on the specified port"
     echo ""
-    echo "To enable Funnel on your account:"
-    echo "1. Go to https://login.tailscale.com/admin/settings/keys"
-    echo "2. Enable 'Tailscale Funnel'"
-    echo "3. Try running this script again"
+    echo "Troubleshooting steps:"
+    echo "1. Check if web server is running: curl http://localhost:$PORT/"
+    echo "2. Check funnel status: tailscale funnel status"
+    echo "3. Check funnel list: tailscale funnel list"
+    echo "4. Try manual funnel command: tailscale funnel $HOSTNAME:$PORT"
     exit 1
 fi
 
-echo ""
-echo "✅ Tailscale Funnel setup complete!"
 echo ""
 echo "Your liturgical display web server is now accessible from anywhere"
 echo "through your secure Tailscale Funnel." 
