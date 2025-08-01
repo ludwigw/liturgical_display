@@ -90,9 +90,8 @@ echo "This script will:"
 echo "1. Check if Tailscale is installed and authenticated"
 echo "2. Start Tailscale if it's offline"
 echo "3. Verify the web server is running"
-echo "4. Check if Funnel is enabled on your account"
-echo "5. Set up a secure funnel for remote access"
-echo "6. Provide you with a public URL for your display"
+echo "4. Set up a secure funnel for remote access"
+echo "5. Provide you with a public URL for your display"
 echo ""
 
 # Function to print status
@@ -189,18 +188,12 @@ else
     echo "  python3 -m liturgical_display.web_server"
 fi
 
-# 4. Prompt for hostname if not provided
+# 4. Set default hostname (will be assigned by Tailscale)
 if [ -z "$HOSTNAME" ]; then
+    HOSTNAME="liturgical-display"
     echo ""
-    echo "4. Setting up Funnel hostname..."
-    echo "Please enter a hostname for your Tailscale Funnel (e.g., 'liturgical-display'):"
-    echo "This will create a URL like: https://your-hostname.your-tailnet.ts.net"
-    read -r HOSTNAME
-    
-    if [ -z "$HOSTNAME" ]; then
-        print_status "FAIL" "Hostname is required"
-        exit 1
-    fi
+    echo "4. Using default hostname: $HOSTNAME"
+    echo "Note: Tailscale will assign the actual hostname automatically"
 fi
 
 # 5. Check if Funnel is already running
@@ -253,9 +246,9 @@ if [ "$TAILSCALE_ONLINE" = false ]; then
 fi
 print_status "PASS" "Tailscale is online and ready for funnel setup"
 
-# 7. Check if Funnel is enabled on the account
+# 5. Check if Funnel is enabled on the account
 echo ""
-echo "7. Checking Funnel availability..."
+echo "5. Checking Funnel availability..."
 FUNNEL_AVAILABLE=$(tailscale funnel list 2>/dev/null | head -1)
 if [[ "$FUNNEL_AVAILABLE" == *"Funnel is not enabled"* ]] || [[ "$FUNNEL_AVAILABLE" == *"not enabled"* ]]; then
     print_status "FAIL" "Tailscale Funnel is not enabled on your account"
@@ -268,27 +261,20 @@ if [[ "$FUNNEL_AVAILABLE" == *"Funnel is not enabled"* ]] || [[ "$FUNNEL_AVAILAB
 fi
 print_status "PASS" "Funnel is available on your account"
 
-# 8. Start the Funnel
+# 6. Start the Funnel
 echo ""
-echo "8. Starting Tailscale Funnel..."
+echo "6. Starting Tailscale Funnel..."
 echo "Starting funnel for hostname: $HOSTNAME on port: $PORT"
 echo "This may take a moment..."
 
-# Start the funnel - try different command formats
+# Start the funnel - use background flag to avoid hanging
 FUNNEL_OUTPUT=""
 FUNNEL_EXIT=1
 
-# Try the standard funnel command
-echo "Attempting to start funnel..."
-FUNNEL_OUTPUT=$(tailscale funnel $HOSTNAME:$PORT 2>&1)
+# Use background flag to run funnel in background
+echo "Starting funnel in background..."
+FUNNEL_OUTPUT=$(tailscale funnel --bg $PORT 2>&1)
 FUNNEL_EXIT=$?
-
-# If that fails, try alternative syntax
-if [ $FUNNEL_EXIT -ne 0 ]; then
-    echo "Standard command failed, trying alternative syntax..."
-    FUNNEL_OUTPUT=$(tailscale funnel --hostname=$HOSTNAME --port=$PORT 2>&1)
-    FUNNEL_EXIT=$?
-fi
 
 # Verify the funnel was actually created
 if [ $FUNNEL_EXIT -eq 0 ]; then
@@ -296,16 +282,18 @@ if [ $FUNNEL_EXIT -eq 0 ]; then
     sleep 2
     
     # Check if the funnel appears in the list
-    FUNNEL_VERIFIED=$(tailscale funnel list 2>/dev/null | grep -i "$HOSTNAME" || echo "")
+    FUNNEL_VERIFIED=$(tailscale funnel list 2>/dev/null | grep -i "$PORT" || echo "")
     if [ -n "$FUNNEL_VERIFIED" ]; then
         print_status "PASS" "Tailscale Funnel started successfully"
         echo ""
         echo "🎉 Your liturgical display is now accessible at:"
-        TAILNET_NAME=$(tailscale status --json 2>/dev/null | grep -o '"TailnetName":"[^"]*"' | cut -d'"' -f4)
-        if [ -n "$TAILNET_NAME" ]; then
-            echo "   https://$HOSTNAME.$TAILNET_NAME.ts.net"
+        # Get the actual funnel URL from the status
+        FUNNEL_URL=$(tailscale funnel status 2>/dev/null | grep -o 'https://[^[:space:]]*' || echo "")
+        if [ -n "$FUNNEL_URL" ]; then
+            echo "   $FUNNEL_URL"
         else
-            echo "   https://$HOSTNAME.your-tailnet.ts.net"
+            echo "   https://your-hostname.your-tailnet.ts.net"
+            echo "   (Check 'tailscale funnel status' for the exact URL)"
         fi
         echo ""
         echo "📋 Useful commands:"
