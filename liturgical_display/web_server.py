@@ -7,6 +7,7 @@ Provides HTTP endpoints for accessing liturgical information and images.
 
 import os
 import logging
+import yaml
 from datetime import datetime, date
 from flask import Flask, jsonify, render_template, send_file, abort
 from pathlib import Path
