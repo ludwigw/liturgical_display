@@ -1,3 +1,6 @@
 GitPython
 Pillow
+Flask
+Jinja2
+requests
 liturgical-calendar @ git+https://github.com/ludwigw/liturgical-calendar.git 

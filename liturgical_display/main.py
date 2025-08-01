@@ -52,6 +52,10 @@ def main():
         logger.error("Failed to display image. Aborting.")
         return 1
 
+    # Note: Web server is now handled by a separate systemd service
+    # (liturgical-web.service) that runs continuously
+    logger.info("Display update complete. Web server runs as separate service.")
+
     if config.get('shutdown_after_display', False):
         logger.info("Shutting down system as requested in config...")
         try:

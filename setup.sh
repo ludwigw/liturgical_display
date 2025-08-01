@@ -185,6 +185,41 @@ else
         sudo systemctl enable liturgical.timer
         sudo systemctl start liturgical.timer
         echo "Systemd service and timer installed and enabled for daily runs."
+        
+        # Install and enable web server service (separate from main service)
+        echo "Installing and enabling web server service..."
+        
+        # Get current user for systemd service
+        CURRENT_USER=$(whoami)
+        echo "Using current user '$CURRENT_USER' for systemd services"
+        
+        # Copy web server config
+        if [ ! -f "web_server_config.yaml" ]; then
+            echo "Creating web server configuration file..."
+            cat > "web_server_config.yaml" <<EOF
+# Web server configuration
+host: "0.0.0.0"
+port: 8080
+debug: false
+log_level: "INFO"
+cache_dir: "cache"
+wikipedia_cache_dir: "cache/wikipedia"
+auto_reload: false
+EOF
+        fi
+        
+        # Install systemd service with correct user
+        sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/liturgical-web.service | sed "s|User=pi|User=$CURRENT_USER|g" > /tmp/liturgical-web.service
+        sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/liturgical.service | sed "s|User=pi|User=$CURRENT_USER|g" > /tmp/liturgical.service
+        sudo cp /tmp/liturgical-web.service /etc/systemd/system/liturgical-web.service
+        sudo cp /tmp/liturgical.service /etc/systemd/system/liturgical.service
+        sudo systemctl daemon-reload
+        sudo systemctl enable liturgical-web.service
+        sudo systemctl start liturgical-web.service
+        echo "Web server service installed and enabled for automatic startup."
+        echo "Web server will be available at: http://localhost:8080"
+        echo "Note: Web server runs continuously, separate from the daily display updates."
+        echo "Web server config: web_server_config.yaml"
     else
         echo "Skipping systemd service and timer setup. You can enable it later by running these commands manually."
     fi

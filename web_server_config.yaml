@@ -1,0 +1,17 @@
+# Web server configuration
+# This file is used by the liturgical-web.service
+
+# Server settings
+host: "0.0.0.0"
+port: 8080
+debug: false
+
+# Logging
+log_level: "INFO"
+
+# Cache settings
+cache_dir: "cache"
+wikipedia_cache_dir: "cache/wikipedia"
+
+# Auto-reload settings (for development)
+auto_reload: false 

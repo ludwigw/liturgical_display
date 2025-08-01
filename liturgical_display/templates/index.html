@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Liturgical Calendar Display{% endblock %}
+
+{% block content %}
+<div class="header">
+    <h1 class="feast-title">Liturgical  Display</h1>
+</div>
+
+<div class="content">
+
+        <form action="/" method="get" >
+            <p>
+                <a href="/today" class="button">
+                    View Today
+                </a> 
+        Or explore a specific date:
+            <input type="date" name="date" value="{{ today }}" class="input">
+            <button type="submit" class="button">Go</button>
+        </p>
+        </form>
+    </div>
+
+    <details class="api">
+        <summary><h4>API Documentation</h4></summary>
+        <p>This server provides the following endpoints:</p>
+        
+        <h5>Information Endpoints</h5>
+        <ul>
+            <li><code>/api/today</code> - JSON data for today</li>
+            <li><code>/api/info/YYYY-MM-DD</code> - JSON data for specific date</li>
+        </ul>
+        
+        <h5>Image Endpoints</h5>
+        <ul>
+            <li><code>/api/artwork/today</code> - Today's artwork</li>
+            <li><code>/api/artwork/YYYY-MM-DD</code> - Specific date artwork</li>
+            <li><code>/api/next-artwork/today</code> - Next available artwork (when today has none)</li>
+            <li><code>/api/next-artwork/YYYY-MM-DD</code> - Next available artwork (when date has none)</li>
+            <li><code>/api/image/today/png</code> - Today's generated image in PNG format</li>
+            <li><code>/api/image/today/bmp</code> - Today's generated image in BMP format</li>
+            <li><code>/api/image/YYYY-MM-DD/png</code> - Specific date generated image in PNG format</li>
+            <li><code>/api/image/YYYY-MM-DD/bmp</code> - Specific date generated image in BMP format</li>
+        </ul>
+        
+        <h5>Web Pages</h5>
+        <ul>
+            <li><code>/today</code> - Today's liturgical information page</li>
+            <li><code>/YYYY-MM-DD</code> - Specific date liturgical information page</li>
+        </ul>
+    </details>
+
+    <details class="examples">
+        <summary><h4>Example Usage</h4></summary>
+        <p>Try these example dates:</p>
+        <ul>
+            <li><a href="/2025-12-25">Christmas Day 2025</a></li>
+            <li><a href="/2025-04-20">Easter Sunday 2025</a></li>
+            <li><a href="/2025-02-14">Valentine's Day 2025</a></li>
+        </ul>
+    </details>
+</div>
+{% endblock %} 
