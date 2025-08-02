@@ -13,13 +13,12 @@
 
 <div class="content">
 
-    {% set artwork_path = data_service.get_artwork_path(date) %}
-    {% if artwork_path %}
+    {% if artwork_info %}
     <div class="image-section">
         <img src="/api/artwork/{{ date.strftime('%Y-%m-%d') }}" alt="Liturgical Artwork for {{ date.strftime('%B %d, %Y') }}" class="liturgical-image">
     </div>
     {% elif next_artwork %}
-    <a href="/{{ next_artwork.date_obj.strftime('%Y-%m-%d') if next_artwork.date_obj else '' }}" class="image-section next-artwork-section">
+    <a href="/date/{{ next_artwork.date_obj.strftime('%Y-%m-%d') if next_artwork.date_obj else '' }}" class="image-section next-artwork-section">
         <div class="next-artwork-container">
             <img src="/api/next-artwork/{{ date.strftime('%Y-%m-%d') }}" alt="Next Liturgical Artwork: {{ next_artwork.name }}" class="liturgical-image next-artwork-thumbnail">
             <div class="next-artwork-label-wrapper">
@@ -69,7 +68,12 @@
 
     <ul class="api-links">
         <li><a href="/api/info/{{ date.strftime('%Y-%m-%d') }}">JSON</a></li>
-        <li><a href="/api/artwork/{{ date.strftime('%Y-%m-%d') }}">Original Artwork</a></li>
+        {% if artwork_info %}
+        <li><a href="/api/artwork/{{ date.strftime('%Y-%m-%d') }}">Cached Art</a></li>
+        {% if artwork_info.source %}
+        <li><a href="{{ artwork_info.source }}" target="_blank">Original on Instagram</a></li>
+        {% endif %}
+        {% endif %}
         <li><a href="/api/image/{{ date.strftime('%Y-%m-%d') }}/png">ePaper PNG</a></li>
         <li><a href="/api/image/{{ date.strftime('%Y-%m-%d') }}/bmp">ePaper BMP</a></li>
         <li><a href="/today">Go to Today</a></li>

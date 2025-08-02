@@ -73,7 +73,7 @@ def index():
             # Validate the date format
             parsed_date = datetime.strptime(date_param, '%Y-%m-%d').date()
             # Redirect to the date-specific page
-            return redirect(f'/{date_param}')
+            return redirect(f'/date/{date_param}')
         except ValueError:
             # If invalid date, just render the index page
             pass
@@ -91,21 +91,25 @@ def today():
         if liturgical_data.get('url'):
             wikipedia_summary = wikipedia_service.get_summary(liturgical_data['url'])
         
+        # Get artwork info for today
+        artwork_info = data_service.get_artwork_info(today_date)
+        
         # Get next artwork info if no artwork for today
         next_artwork_info = None
-        if not data_service.get_artwork_path(today_date):
+        if not artwork_info:
             next_artwork_info = data_service.get_next_artwork_info(today_date)
         
         return render_template('date.html', 
                              data=liturgical_data, 
                              wikipedia_summary=wikipedia_summary,
                              date=today_date,
+                             artwork_info=artwork_info,
                              next_artwork=next_artwork_info)
     except Exception as e:
         logger.error(f"Error rendering today page: {e}")
         abort(500)
 
-@app.route('/<date_str>')
+@app.route('/date/<date_str>')
 def date_page(date_str):
     """Liturgical information page for a specific date."""
     try:
@@ -117,15 +121,19 @@ def date_page(date_str):
         if liturgical_data.get('url'):
             wikipedia_summary = wikipedia_service.get_summary(liturgical_data['url'])
         
+        # Get artwork info for this date
+        artwork_info = data_service.get_artwork_info(parsed_date)
+        
         # Get next artwork info if no artwork for this date
         next_artwork_info = None
-        if not data_service.get_artwork_path(parsed_date):
+        if not artwork_info:
             next_artwork_info = data_service.get_next_artwork_info(parsed_date)
         
         return render_template('date.html', 
                              data=liturgical_data, 
                              wikipedia_summary=wikipedia_summary,
                              date=parsed_date,
+                             artwork_info=artwork_info,
                              next_artwork=next_artwork_info)
     except ValueError:
         abort(400, description="Invalid date format. Use YYYY-MM-DD")
