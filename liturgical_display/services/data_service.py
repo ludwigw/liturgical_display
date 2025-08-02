@@ -158,6 +158,49 @@ class DataService:
         except Exception as e:
             log(f"[data_service.py] ERROR getting artwork path: {e}")
             return None
+    
+    def get_artwork_info(self, target_date: date) -> Optional[dict]:
+        """
+        Get complete artwork information for a specific date.
+        
+        Args:
+            target_date: The date to get artwork for
+            
+        Returns:
+            Dictionary with artwork info including path and source URL, or None if not found
+        """
+        try:
+            # Use the liturgical-calendar ArtworkManager to get artwork info
+            from liturgical_calendar.core.artwork_manager import ArtworkManager
+            
+            date_str = target_date.strftime("%Y-%m-%d")
+            artwork_manager = ArtworkManager()
+            artwork_info = artwork_manager.get_artwork_for_date(date_str, auto_cache=True)
+            
+            if artwork_info and artwork_info.get('cached_file'):
+                artwork_path = artwork_info['cached_file']
+                # Make sure the path is absolute
+                if not Path(artwork_path).is_absolute():
+                    artwork_path = str(Path(self.cache_dir).parent / artwork_path)
+                
+                # Return complete artwork info
+                result = {
+                    'path': artwork_path,
+                    'name': artwork_info.get('name'),
+                    'source': artwork_info.get('source'),  # Instagram URL
+                    'url': artwork_info.get('url'),        # Wikipedia URL
+                    'martyr': artwork_info.get('martyr')
+                }
+                
+                log(f"[data_service.py] Found artwork info: {artwork_path}")
+                return result
+            else:
+                log(f"[data_service.py] No artwork found for {target_date}")
+                return None
+                
+        except Exception as e:
+            log(f"[data_service.py] ERROR getting artwork info: {e}")
+            return None
 
     def get_next_artwork_info(self, target_date: date) -> Optional[dict]:
         """
