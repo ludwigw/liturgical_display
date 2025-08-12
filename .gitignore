@@ -1,6 +1,9 @@
 # Build and cache directories
 build/
 cache/
+today.png
+IT8951-ePaper/
+bin/
 
 # Python cache files
 __pycache__/
