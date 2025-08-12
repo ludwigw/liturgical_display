@@ -1,0 +1,16 @@
+# Example config.yaml for liturgical_display
+# Copy this file to config.yml and customize for your environment
+# Package handles its own caching internally
+
+# Display settings
+output_image: /path/to/your/liturgical_display/today.png
+vcom: -1.18
+shutdown_after_display: false
+log_file: /path/to/your/liturgical_display/logs/display.log
+
+# Web server configuration
+web_server:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+  debug: false

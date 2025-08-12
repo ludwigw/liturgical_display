@@ -29,4 +29,8 @@ logs/
 
 # Temporary files
 *.tmp
-*.temp 
+*.temp
+
+# Configuration files (user-specific)
+config.yml
+config.yaml 
