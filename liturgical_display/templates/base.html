@@ -272,10 +272,8 @@
         }
         
         .close {
-            color: #aaa;
             float: right;
-            font-size: 28px;
-            font-weight: bold;
+            font-size: 64px;
             line-height: 1;
             cursor: pointer;
             position: absolute;
@@ -312,13 +310,22 @@
         
         .verse {
             display: inline;
-            margin-right: 0.5em;
         }
         
         .verse-number {
             font-weight: bold;
-            color: #666;
+            margin-left: 1.2em;
             margin-right: 0.3em;
+            font-family: HankenGrotesk, Arial, sans-serif;
+            font-size: 0.8em;
+        }
+        
+        .verse-number::after {
+            content: "\00a0\00a0"; /* Two non-breaking spaces */
+        }
+
+        .verse:first-child .verse-number {
+            margin-left: 0;
         }
         
         .verse-paragraph {
