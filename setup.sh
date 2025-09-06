@@ -231,20 +231,8 @@ else
         CURRENT_USER=$(whoami)
         echo "Using current user '$CURRENT_USER' for systemd services"
         
-        # Copy web server config
-        if [ ! -f "web_server_config.yaml" ]; then
-            echo "Creating web server configuration file..."
-            cat > "web_server_config.yaml" <<EOF
-# Web server configuration
-host: "0.0.0.0"
-port: 8080
-debug: false
-log_level: "INFO"
-cache_dir: "cache"
-wikipedia_cache_dir: "cache/wikipedia"
-auto_reload: false
-EOF
-        fi
+        # Web server now uses config.yml (already created above)
+        echo "Web server will use config.yml for configuration"
         
         # Install systemd service with correct user
         sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/liturgical-web.service | sed "s|User=pi|User=$CURRENT_USER|g" > /tmp/liturgical-web.service
@@ -257,7 +245,7 @@ EOF
         echo "Web server service installed and enabled for automatic startup."
         echo "Web server will be available at: http://localhost:8080"
         echo "Note: Web server runs continuously, separate from the daily display updates."
-        echo "Web server config: web_server_config.yaml"
+        echo "Web server config: config.yml"
     else
         echo "Skipping systemd service and timer setup. You can enable it later by running these commands manually."
     fi

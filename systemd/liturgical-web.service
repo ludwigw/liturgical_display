@@ -13,7 +13,7 @@ StandardError=journal
 Restart=always
 RestartSec=10
 Environment=PYTHONUNBUFFERED=1
-Environment=LITURGICAL_CONFIG={{PROJECT_DIR}}/web_server_config.yaml
+Environment=LITURGICAL_CONFIG={{PROJECT_DIR}}/config.yml
 
 [Install]
 WantedBy=multi-user.target 
