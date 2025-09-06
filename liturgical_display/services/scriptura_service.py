@@ -85,9 +85,9 @@ class ScripturaService:
                     max_attempts = 50  # Reasonable limit to prevent infinite loops
                     
                     while verse_num <= start_verse + max_attempts:
-                        verse_text = self._get_single_verse(book, chapter, str(verse_num))
-                        if verse_text and not verse_text.startswith("[Reading:"):
-                            verses.append(f"{verse_num} {verse_text}")
+                        verse_data = self._get_single_verse_data(book, chapter, str(verse_num))
+                        if verse_data and not verse_data.get('text', '').startswith("[Reading:"):
+                            verses.append(self._format_verse_html(verse_data))
                             verse_num += 1
                         else:
                             # No more verses found, stop here
@@ -100,24 +100,90 @@ class ScripturaService:
                 else:
                     # Regular range
                     end_verse = int(end_verse.strip())
-                    verses = []
-                    for verse_num in range(start_verse, end_verse + 1):
-                        verse_text = self._get_single_verse(book, chapter, str(verse_num))
-                        if verse_text and not verse_text.startswith("[Reading:"):
-                            verses.append(f"{verse_num} {verse_text}")
-                    
-                    if verses:
-                        return " ".join(verses)
-                    else:
-                        return f"[Reading: {reference}]"
+                verses = []
+                for verse_num in range(start_verse, end_verse + 1):
+                    verse_data = self._get_single_verse_data(book, chapter, str(verse_num))
+                    if verse_data and not verse_data.get('text', '').startswith("[Reading:"):
+                        verses.append(self._format_verse_html(verse_data))
+                
+                if verses:
+                    return " ".join(verses)
+                else:
+                    return f"[Reading: {reference}]"
             else:
                 # Single verse
-                return self._get_single_verse(book, chapter, verse_range)
+                verse_data = self._get_single_verse_data(book, chapter, verse_range)
+                if verse_data and not verse_data.get('text', '').startswith("[Reading:"):
+                    return self._format_verse_html(verse_data)
+                else:
+                    return f"[Reading: {reference}]"
                 
         except Exception as e:
             log(f"[scriptura_service.py] ERROR getting text for {reference}: {e}")
             return f"[Reading: {reference}]"
     
+    def _get_single_verse_data(self, book: str, chapter: str, verse: str) -> dict:
+        """
+        Get a single verse from the Scriptura API and return the full data.
+        
+        Args:
+            book: Book name
+            chapter: Chapter number
+            verse: Verse number
+            
+        Returns:
+            Dictionary with verse data or None if error
+        """
+        try:
+            # Make API request to Scriptura API
+            url = f"{self.base_url}/api/verse"
+            params = {
+                'book': book,
+                'chapter': chapter,
+                'verse': verse,
+                'version': 'kjv'  # Use KJV as it's available and commonly used
+            }
+            
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            data = response.json()
+            
+            # Return the full data structure
+            return data
+                
+        except requests.exceptions.RequestException as e:
+            log(f"[scriptura_service.py] API request failed for {book} {chapter}:{verse}: {e}")
+            return None
+        except Exception as e:
+            log(f"[scriptura_service.py] ERROR getting verse {book} {chapter}:{verse}: {e}")
+            return None
+
+    def _format_verse_html(self, verse_data: dict) -> str:
+        """
+        Format verse data into structured HTML.
+        
+        Args:
+            verse_data: Dictionary with verse data from API
+            
+        Returns:
+            Formatted HTML string
+        """
+        if not verse_data:
+            return ""
+        
+        verse_number = verse_data.get('verse', '')
+        verse_text = verse_data.get('text', '')
+        
+        if not verse_text:
+            return ""
+        
+        # Clean up the text (remove verse number if it's already there)
+        clean_text = verse_text.strip()
+        
+        # Wrap in structured HTML
+        return f'<span class="verse"><span class="verse-number">{verse_number}</span> {clean_text}</span>'
+
     def _get_single_verse(self, book: str, chapter: str, verse: str) -> str:
         """
         Get a single verse from the Scriptura API.

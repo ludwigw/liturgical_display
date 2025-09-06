@@ -61,14 +61,11 @@
         <p>{{ paragraph }}</p>
         {% endfor %}
         
-        {% if reflection.prayer %}
-        <div class="prayer-section">
-            <h4>Prayer</h4>
-            <div class="prayer-text">
-                {% for line in reflection.prayer.split('\n') %}
-                <p>{{ line }}</p>
-                {% endfor %}
-            </div>
+    {% if reflection.prayer %}
+        <div class="prayer-text">
+            {% for line in reflection.prayer.split('\n') %}
+            <p>{{ line }}</p>
+            {% endfor %}
         </div>
         {% endif %}
         
