@@ -30,7 +30,7 @@ def create_app(config=None):
     """Create and configure the Flask application."""
     if config is None:
         # Load web server config
-        config_path = os.environ.get('LITURGICAL_CONFIG', 'web_server_config.yaml')
+        config_path = os.environ.get('LITURGICAL_CONFIG', 'config.yml')
         try:
             with open(config_path) as f:
                 config = yaml.safe_load(f)
