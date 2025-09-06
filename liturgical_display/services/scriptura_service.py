@@ -16,13 +16,14 @@ logger = logging.getLogger(__name__)
 class ScripturaService:
     """Service for fetching reading contents from Scriptura API."""
     
-    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://www.scriptura-api.com", config: Optional[Dict[str, Any]] = None):
+    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://www.scriptura-api.com", config: Optional[Dict[str, Any]] = None, version: str = "kjv"):
         """Initialize the Scriptura service."""
         # Scriptura API is free and doesn't require an API key
         self.api_key = None  # Not needed for this API
         self.base_url = base_url.rstrip('/')
+        self.version = version
         
-        log(f"[scriptura_service.py] Initialized with base URL: {self.base_url}")
+        log(f"[scriptura_service.py] Initialized with base URL: {self.base_url}, version: {self.version}")
     
     def get_reading_contents(self, readings: list) -> list:
         """
@@ -141,7 +142,7 @@ class ScripturaService:
                 'book': book,
                 'chapter': chapter,
                 'verse': verse,
-                'version': 'kjv'  # Use KJV as it's available and commonly used
+                'version': self.version
             }
             
             response = requests.get(url, params=params, timeout=10)
@@ -222,7 +223,7 @@ class ScripturaService:
                 'book': book,
                 'chapter': chapter,
                 'verse': verse,
-                'version': 'kjv'  # Use KJV as it's available and commonly used
+                'version': self.version
             }
             
             response = requests.get(url, params=params, timeout=10)
@@ -315,6 +316,22 @@ class ScripturaService:
         except Exception as e:
             log(f"[scriptura_service.py] Error parsing reference '{reference}': {e}")
             return "Genesis", "1", "1"  # Fallback
+    
+    def get_available_versions(self) -> list:
+        """
+        Get list of available Bible versions from Scriptura API.
+        
+        Returns:
+            List of version dictionaries
+        """
+        try:
+            url = f"{self.base_url}/api/versions"
+            response = requests.get(url, timeout=10)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logger.error(f"Error fetching available versions: {e}")
+            return []
     
     def test_connection(self) -> bool:
         """

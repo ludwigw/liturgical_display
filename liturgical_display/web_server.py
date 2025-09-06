@@ -357,6 +357,19 @@ def api_reading_content(reading_reference):
             'text': 'Error loading reading content'
         }), 500
 
+@app.route('/api/versions')
+def api_versions():
+    """API endpoint for getting available Bible versions."""
+    try:
+        from .services.scriptura_service import ScripturaService
+        scriptura_service = ScripturaService()
+        
+        versions = scriptura_service.get_available_versions()
+        return jsonify(versions)
+    except Exception as e:
+        logger.error(f"Error getting available versions: {e}")
+        return jsonify({'error': 'Failed to fetch versions'}), 500
+
 @app.errorhandler(400)
 def bad_request(error):
     """Handle 400 errors."""
