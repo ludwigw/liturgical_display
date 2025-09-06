@@ -197,11 +197,11 @@ Output: 1-2 paragraphs only."""
         # Readings
         if inputs['readings']:
             message_parts.append("Readings:")
-            for reading_type, reading_data in inputs['readings'].items():
+            for i, reading_data in enumerate(inputs['readings'], 1):
                 if isinstance(reading_data, dict) and 'text' in reading_data:
-                    message_parts.append(f"- {reading_type}: {reading_data['text']}")
+                    message_parts.append(f"- Reading {i}: {reading_data['text']}")
                 elif isinstance(reading_data, str):
-                    message_parts.append(f"- {reading_type}: {reading_data}")
+                    message_parts.append(f"- Reading {i}: {reading_data}")
         
         return "\n".join(message_parts)
     

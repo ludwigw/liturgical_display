@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class ScripturaService:
     """Service for fetching reading contents from Scriptura API."""
     
-    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://api.scriptura-api.com", config: Optional[Dict[str, Any]] = None):
+    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://www.scriptura-api.com", config: Optional[Dict[str, Any]] = None):
         """Initialize the Scriptura service."""
         # Scriptura API is free and doesn't require an API key
         self.api_key = None  # Not needed for this API
@@ -24,41 +24,30 @@ class ScripturaService:
         
         log(f"[scriptura_service.py] Initialized with base URL: {self.base_url}")
     
-    def get_reading_contents(self, readings: Dict[str, Any]) -> Dict[str, Any]:
+    def get_reading_contents(self, readings: list) -> list:
         """
         Get the actual text contents of readings from Scriptura API.
         
         Args:
-            readings: Dictionary containing reading references
+            readings: List of reading reference strings
             
         Returns:
-            Dictionary with reading references and their text contents
+            List of dictionaries with reading references and their text contents
         """
-        if not self.api_key:
-            log("[scriptura_service.py] No API key available, returning original readings")
-            return readings
-        
         try:
-            enriched_readings = {}
+            enriched_readings = []
             
-            for reading_type, reading_data in readings.items():
-                if isinstance(reading_data, dict) and 'reference' in reading_data:
+            for reading_ref in readings:
+                if isinstance(reading_ref, str):
                     # Get text for this reading
-                    text = self._get_reading_text(reading_data['reference'])
-                    enriched_readings[reading_type] = {
-                        'reference': reading_data['reference'],
+                    text = self._get_reading_text(reading_ref)
+                    enriched_readings.append({
+                        'reference': reading_ref,
                         'text': text
-                    }
-                elif isinstance(reading_data, str):
-                    # Direct reference string
-                    text = self._get_reading_text(reading_data)
-                    enriched_readings[reading_type] = {
-                        'reference': reading_data,
-                        'text': text
-                    }
+                    })
                 else:
-                    # Keep as-is if not a reference
-                    enriched_readings[reading_type] = reading_data
+                    # Keep as-is if not a string
+                    enriched_readings.append(reading_ref)
             
             return enriched_readings
             
