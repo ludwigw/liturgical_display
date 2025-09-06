@@ -22,7 +22,7 @@
             background-color: #ffffff;
             color: #4a4a4a;
         }
-        .container {
+        .container, .modal-content {
             max-width: 800px;
             margin: 0 auto;
             background: white;
@@ -227,6 +227,131 @@
             font-size: 1.1em;
             cursor: pointer;
             text-decoration: none;
+        }
+        
+        .prayer-text {
+            font-style: italic;
+            margin-bottom: 20px;
+        }
+        
+        .prayer-text p {
+            margin: 0 0 8px 0;
+        }
+        
+        .prayer-text p:last-child {
+            margin-bottom: 0;
+        }
+        
+        /* Reading link styles */
+        .reading-link {
+            color: inherit;
+            text-decoration: none;
+            cursor: pointer;
+            border-bottom: 1px dotted;
+        }
+        
+        .reading-link:hover {
+            color: #49a0fd;
+            border-bottom-color: #49a0fd;
+        }
+        
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background: #ffffff;
+        }
+        
+        .modal-content {
+            overflow-y: auto;
+        }
+        
+        .close {
+            float: right;
+            font-size: 64px;
+            line-height: 1;
+            cursor: pointer;
+            position: absolute;
+            top: -5px;
+            right: 20px;
+            z-index: 1001;
+        }
+        
+        .close:hover,
+        .close:focus {
+            color: #000;
+            text-decoration: none;
+        }
+        
+        .modal-content h3 {
+            margin-top: 0;
+            margin-bottom: 16px;
+            color: #333;
+            font-family: 'HankenGrotesk', 'Arial', sans-serif;
+        }
+        
+        .reading-text {
+            font-family: 'HappyTimes', 'Georgia', serif;
+            line-height: 1.7;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        
+        .reading-paragraph {
+            display: block;
+            margin-bottom: 1em;
+            line-height: 1.6;
+        }
+        
+        .verse {
+            display: inline;
+        }
+        
+        .verse-number {
+            font-weight: bold;
+            margin-left: 1.2em;
+            margin-right: 0.3em;
+            font-family: HankenGrotesk, Arial, sans-serif;
+            font-size: 0.8em;
+        }
+        
+        .nowrap {
+            white-space: nowrap;
+        }
+
+        .verse:first-child .verse-number {
+            margin-left: 0;
+        }
+        
+        .verse-paragraph {
+            margin: 0.5em 0 0.5em 2em;
+            text-indent: 0;
+            font-style: italic;
+            color: #555;
+        }
+        
+        .loading, .error {
+            text-align: center;
+            padding: 20px;
+            color: #6c757d;
+            font-style: italic;
+        }
+        
+        .error {
+            color: #dc3545;
+        }
+        
+        /* Responsive modal */
+        @media (max-width: 600px) {
+            .modal-content {
+                padding: 16px;
+            }
         }
     </style>
 </head>

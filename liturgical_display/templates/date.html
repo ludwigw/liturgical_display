@@ -49,7 +49,7 @@
         {% endif %}
         <ul>
             {% for reading in data.readings %}
-            <li>{{ reading }}</li>
+            <li><a href="#" class="reading-link" data-reading="{{ reading }}">{{ reading }}</a></li>
             {% endfor %}
         </ul>
     </div>
@@ -60,6 +60,15 @@
         {% for paragraph in reflection.reflection.split('\n\n') %}
         <p>{{ paragraph }}</p>
         {% endfor %}
+        
+    {% if reflection.prayer %}
+        <div class="prayer-text">
+            {% for line in reflection.prayer.split('\n') %}
+            <p>{{ line }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+        
         {% if data.url %}
         <a href="{{ data.url }}" class="wikipedia-link" target="_blank">
             Read more on Wikipedia
@@ -93,4 +102,60 @@
         <li><a href="/today">Go to Today</a></li>
     </ul>
 </div>
+
+<!-- Reading Content Modal -->
+<div id="readingModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3 id="modalTitle">Reading</h3>
+        <div id="modalContent">
+            <div class="loading">Loading reading content...</div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Reading modal functionality
+const modal = document.getElementById('readingModal');
+const modalTitle = document.getElementById('modalTitle');
+const modalContent = document.getElementById('modalContent');
+const closeBtn = document.getElementsByClassName('close')[0];
+
+// Open modal when reading link is clicked
+document.querySelectorAll('.reading-link').forEach(link => {
+    link.addEventListener('click', function(e) {
+        e.preventDefault();
+        const reading = this.getAttribute('data-reading');
+        modalTitle.textContent = reading;
+        modalContent.innerHTML = '<div class="loading">Loading reading content...</div>';
+        modal.style.display = 'block';
+        
+        // Fetch reading content
+        fetch(`/api/reading/${encodeURIComponent(reading)}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.text) {
+                    modalContent.innerHTML = `<div class="reading-text">${data.text}</div>`;
+                } else {
+                    modalContent.innerHTML = '<div class="error">Reading content not available</div>';
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching reading:', error);
+                modalContent.innerHTML = '<div class="error">Error loading reading content</div>';
+            });
+    });
+});
+
+// Close modal
+closeBtn.onclick = function() {
+    modal.style.display = 'none';
+}
+
+window.onclick = function(event) {
+    if (event.target == modal) {
+        modal.style.display = 'none';
+    }
+}
+</script>
 {% endblock %} 
