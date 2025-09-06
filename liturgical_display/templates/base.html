@@ -288,15 +288,14 @@
         
         .modal-content {
             background-color: #fefefe;
-            margin: 5% auto;
+            margin: 0;
             padding: 20px;
             border: none;
-            border-radius: 8px;
-            width: 90%;
-            max-width: 600px;
-            max-height: 80vh;
+            border-radius: 0;
+            width: 100%;
+            height: 100vh;
             overflow-y: auto;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            box-shadow: none;
         }
         
         .close {
@@ -342,8 +341,6 @@
         /* Responsive modal */
         @media (max-width: 600px) {
             .modal-content {
-                width: 95%;
-                margin: 10% auto;
                 padding: 16px;
             }
         }

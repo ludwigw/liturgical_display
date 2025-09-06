@@ -70,9 +70,46 @@ class ScripturaService:
             # Clean up the reference for the API
             clean_reference = self._clean_reference(reference)
             
-            # Parse reference to get book, chapter, verse
-            book, chapter, verse = self._parse_reference(clean_reference)
+            # Parse reference to get book, chapter, verse range
+            book, chapter, verse_range = self._parse_reference(clean_reference)
             
+            # Handle verse ranges by making multiple API calls
+            if '-' in verse_range:
+                start_verse, end_verse = verse_range.split('-', 1)
+                start_verse = int(start_verse.strip())
+                end_verse = int(end_verse.strip())
+                
+                verses = []
+                for verse_num in range(start_verse, end_verse + 1):
+                    verse_text = self._get_single_verse(book, chapter, str(verse_num))
+                    if verse_text and not verse_text.startswith("[Reading:"):
+                        verses.append(f"{verse_num} {verse_text}")
+                
+                if verses:
+                    return " ".join(verses)
+                else:
+                    return f"[Reading: {reference}]"
+            else:
+                # Single verse
+                return self._get_single_verse(book, chapter, verse_range)
+                
+        except Exception as e:
+            log(f"[scriptura_service.py] ERROR getting text for {reference}: {e}")
+            return f"[Reading: {reference}]"
+    
+    def _get_single_verse(self, book: str, chapter: str, verse: str) -> str:
+        """
+        Get a single verse from the Scriptura API.
+        
+        Args:
+            book: Book name
+            chapter: Chapter number
+            verse: Verse number
+            
+        Returns:
+            Text content of the verse
+        """
+        try:
             # Make API request to Scriptura API
             url = f"{self.base_url}/api/verse"
             params = {
@@ -93,15 +130,15 @@ class ScripturaService:
             elif 'verse' in data:
                 return data['verse'].strip()
             else:
-                log(f"[scriptura_service.py] Unexpected API response format for {reference}")
-                return f"[Reading: {reference}]"
+                log(f"[scriptura_service.py] Unexpected API response format for {book} {chapter}:{verse}")
+                return f"[Reading: {book} {chapter}:{verse}]"
                 
         except requests.exceptions.RequestException as e:
-            log(f"[scriptura_service.py] API request failed for {reference}: {e}")
-            return f"[Reading: {reference}]"
+            log(f"[scriptura_service.py] API request failed for {book} {chapter}:{verse}: {e}")
+            return f"[Reading: {book} {chapter}:{verse}]"
         except Exception as e:
-            log(f"[scriptura_service.py] ERROR getting text for {reference}: {e}")
-            return f"[Reading: {reference}]"
+            log(f"[scriptura_service.py] ERROR getting verse {book} {chapter}:{verse}: {e}")
+            return f"[Reading: {book} {chapter}:{verse}]"
     
     def _clean_reference(self, reference: str) -> str:
         """
@@ -161,11 +198,8 @@ class ScripturaService:
                         book = book_chapter
                         chapter = "1"
                     
-                    # Handle verse ranges (take first verse)
-                    if '-' in verse_part:
-                        verse = verse_part.split('-')[0].strip()
-                    else:
-                        verse = verse_part
+                    # Handle verse ranges (keep the full range)
+                    verse = verse_part
                     
                     return book, chapter, verse
             
