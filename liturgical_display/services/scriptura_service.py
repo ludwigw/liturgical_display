@@ -183,23 +183,22 @@ class ScripturaService:
         
         # Replace ¶ with proper paragraph breaks within the verse
         if '¶' in clean_text:
-            # Split by ¶ and create paragraphs within the verse
+            # Split by ¶ and create proper paragraphs
             parts = clean_text.split('¶')
-            verse_content = []
+            paragraphs = []
             
             for i, part in enumerate(parts):
                 part = part.strip()
                 if part:  # Only add non-empty parts
                     if i == 0:
                         # First part - this is the main verse content
-                        verse_content.append(part)
+                        paragraphs.append(f'<span class="verse"><span class="verse-number">{verse_number}</span> {part}</span>')
                     else:
-                        # Subsequent parts - these are paragraph breaks within the verse
-                        verse_content.append(f'<br><br>{part}')
+                        # Subsequent parts - these are new paragraphs within the verse
+                        paragraphs.append(f'<p class="verse-paragraph">{part}</p>')
             
-            # Join all parts and wrap in verse span
-            formatted_text = ''.join(verse_content)
-            return f'<span class="verse"><span class="verse-number">{verse_number}</span> {formatted_text}</span>'
+            # Join all paragraphs
+            return ''.join(paragraphs)
         else:
             # No paragraph markers, just wrap in verse span
             return f'<span class="verse"><span class="verse-number">{verse_number}</span> {clean_text}</span>'
