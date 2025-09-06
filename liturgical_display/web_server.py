@@ -15,6 +15,7 @@ from pathlib import Path
 from .services.data_service import DataService
 from .services.wikipedia_service import WikipediaService
 from .utils import log
+import smartypants
 
 # Initialize Flask app
 app = Flask(__name__, static_folder='static')
@@ -52,6 +53,15 @@ def create_app(config=None):
     # Initialize data service with config
     global data_service
     data_service = DataService(config=config)
+    
+    # Register smartypants filter
+    @app.template_filter('smartypants')
+    def smartypants_filter(text):
+        """Apply smartypants typography improvements to text."""
+        if text:
+            from markupsafe import Markup
+            return Markup(smartypants.smartypants(text))
+        return text
     
     # Add context processor for current time and data service
     @app.context_processor

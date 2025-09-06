@@ -151,10 +151,8 @@ class ReflectionService:
                 reflection_text = response_content
                 prayer_text = ''
             
-            # Apply typography improvements
-            reflection_text = smartypants.smartypants(reflection_text)
-            if prayer_text:
-                prayer_text = smartypants.smartypants(prayer_text)
+            # Don't apply smartypants here - it will be applied in the template
+            # to avoid double-encoding issues
             
             # Build response
             reflection = {
@@ -245,9 +243,8 @@ Example:
             reflection_text = f"In {season}, we continue our journey of faith. May God's grace guide us through this day."
             prayer_text = "Lord, guide us through this season of faith.\nMay your grace be our strength and your love our guide. Amen."
         
-        # Apply typography improvements
-        reflection_text = smartypants.smartypants(reflection_text)
-        prayer_text = smartypants.smartypants(prayer_text)
+        # Don't apply smartypants here - it will be applied in the template
+        # to avoid double-encoding issues
         
         return {
             "date": target_date.strftime("%Y-%m-%d"),
