@@ -11,7 +11,7 @@ from .calendar import render_today
 from .display import display_image
 
 def load_config():
-    config_path = os.environ.get('LITURGICAL_CONFIG', 'config.yaml')
+    config_path = os.environ.get('LITURGICAL_CONFIG', 'config.yml')
     with open(config_path) as f:
         return yaml.safe_load(f)
 
