@@ -330,6 +330,33 @@ def api_token_usage():
         logger.error(f"Error getting token usage: {e}")
         abort(500)
 
+@app.route('/api/reading/<reading_reference>')
+def api_reading_content(reading_reference):
+    """API endpoint for fetching reading content from Scriptura API."""
+    try:
+        from .services.scriptura_service import ScripturaService
+        scriptura_service = ScripturaService()
+        
+        # Get reading content
+        reading_contents = scriptura_service.get_reading_contents([reading_reference])
+        
+        if reading_contents and len(reading_contents) > 0:
+            return jsonify({
+                'reference': reading_reference,
+                'text': reading_contents[0].get('text', 'Content not available')
+            })
+        else:
+            return jsonify({
+                'reference': reading_reference,
+                'text': 'Reading content not available'
+            })
+    except Exception as e:
+        logger.error(f"Error getting reading content for {reading_reference}: {e}")
+        return jsonify({
+            'reference': reading_reference,
+            'text': 'Error loading reading content'
+        }), 500
+
 @app.errorhandler(400)
 def bad_request(error):
     """Handle 400 errors."""

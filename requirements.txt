@@ -4,4 +4,5 @@ Flask
 Jinja2
 requests
 openai
+smartypants
 liturgical-calendar @ git+https://github.com/ludwigw/liturgical-calendar.git 

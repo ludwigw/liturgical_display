@@ -12,6 +12,7 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Dict, Any, Optional
 import openai
+import smartypants
 from ..utils import log
 
 logger = logging.getLogger(__name__)
@@ -137,8 +138,23 @@ class ReflectionService:
             self.tokens_used += response.usage.total_tokens
             log(f"[reflection_service.py] Used {response.usage.total_tokens} tokens (total: {self.tokens_used})")
             
-            # Extract reflection text
-            reflection_text = response.choices[0].message.content.strip()
+            # Extract and parse JSON response
+            response_content = response.choices[0].message.content.strip()
+            
+            try:
+                # Try to parse as JSON first
+                response_data = json.loads(response_content)
+                reflection_text = response_data.get('reflection', response_content)
+                prayer_text = response_data.get('prayer', '')
+            except json.JSONDecodeError:
+                # Fallback to treating as plain text
+                reflection_text = response_content
+                prayer_text = ''
+            
+            # Apply typography improvements
+            reflection_text = smartypants.smartypants(reflection_text)
+            if prayer_text:
+                prayer_text = smartypants.smartypants(prayer_text)
             
             # Build response
             reflection = {
@@ -146,6 +162,7 @@ class ReflectionService:
                 "season": liturgical_data.get('season', 'Unknown'),
                 "title": liturgical_data.get('name', ''),
                 "reflection": reflection_text,
+                "prayer": prayer_text,
                 "generated_at": datetime.now().isoformat(),
                 "tokens_used": response.usage.total_tokens
             }
@@ -172,14 +189,25 @@ class ReflectionService:
     def _get_system_prompt(self) -> str:
         """Get the system prompt for the LLM."""
         return """You are a liturgical reflection generator. 
-Always produce a short devotional reflection (2–10 sentences). 
+Always produce a short devotional reflection (2–10 sentences) and a 2-line prayer.
 
 - If a feast/saint is present: name them and describe what they are remembered for, connecting to the readings. 
 - If no feast: mention the season and connect the readings to the season's themes. 
 Always end with a practical takeaway for Christian life today.
 
+The prayer should be 2 lines that resonate with the reflection, written in a traditional prayer style.
+
 Tone: warm, devotional, concise.
-Output: 1-2 paragraphs only."""
+
+Output format: Return a JSON object with:
+- "reflection": the devotional reflection (1-2 paragraphs)
+- "prayer": the 2-line prayer
+
+Example:
+{
+  "reflection": "Today we honor...",
+  "prayer": "Heavenly Father, grant us the courage to follow your will.\nMay we find strength in your word and peace in your presence. Amen."
+}"""
     
     def _format_user_message(self, inputs: Dict[str, Any]) -> str:
         """Format the user message for the LLM."""
@@ -212,14 +240,21 @@ Output: 1-2 paragraphs only."""
         
         if feast:
             reflection_text = f"Today we remember {feast} in {season}. May their example inspire us in our daily walk of faith."
+            prayer_text = "Heavenly Father, help us follow the example of your saints.\nGrant us the grace to serve you faithfully in all we do. Amen."
         else:
             reflection_text = f"In {season}, we continue our journey of faith. May God's grace guide us through this day."
+            prayer_text = "Lord, guide us through this season of faith.\nMay your grace be our strength and your love our guide. Amen."
+        
+        # Apply typography improvements
+        reflection_text = smartypants.smartypants(reflection_text)
+        prayer_text = smartypants.smartypants(prayer_text)
         
         return {
             "date": target_date.strftime("%Y-%m-%d"),
             "season": liturgical_data.get('season', 'Unknown'),
             "title": feast,
             "reflection": reflection_text,
+            "prayer": prayer_text,
             "generated_at": datetime.now().isoformat(),
             "tokens_used": 0,
             "fallback": True
