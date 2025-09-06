@@ -77,18 +77,39 @@ class ScripturaService:
             if '-' in verse_range:
                 start_verse, end_verse = verse_range.split('-', 1)
                 start_verse = int(start_verse.strip())
-                end_verse = int(end_verse.strip())
                 
-                verses = []
-                for verse_num in range(start_verse, end_verse + 1):
-                    verse_text = self._get_single_verse(book, chapter, str(verse_num))
-                    if verse_text and not verse_text.startswith("[Reading:"):
-                        verses.append(f"{verse_num} {verse_text}")
-                
-                if verses:
-                    return " ".join(verses)
+                # Handle "end" as a special case - try verses until we get an error
+                if end_verse.strip().lower() == 'end':
+                    verses = []
+                    verse_num = start_verse
+                    max_attempts = 50  # Reasonable limit to prevent infinite loops
+                    
+                    while verse_num <= start_verse + max_attempts:
+                        verse_text = self._get_single_verse(book, chapter, str(verse_num))
+                        if verse_text and not verse_text.startswith("[Reading:"):
+                            verses.append(f"{verse_num} {verse_text}")
+                            verse_num += 1
+                        else:
+                            # No more verses found, stop here
+                            break
+                    
+                    if verses:
+                        return " ".join(verses)
+                    else:
+                        return f"[Reading: {reference}]"
                 else:
-                    return f"[Reading: {reference}]"
+                    # Regular range
+                    end_verse = int(end_verse.strip())
+                    verses = []
+                    for verse_num in range(start_verse, end_verse + 1):
+                        verse_text = self._get_single_verse(book, chapter, str(verse_num))
+                        if verse_text and not verse_text.startswith("[Reading:"):
+                            verses.append(f"{verse_num} {verse_text}")
+                    
+                    if verses:
+                        return " ".join(verses)
+                    else:
+                        return f"[Reading: {reference}]"
             else:
                 # Single verse
                 return self._get_single_verse(book, chapter, verse_range)
