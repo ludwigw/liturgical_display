@@ -179,27 +179,36 @@ class ScripturaService:
         if not verse_text:
             return ""
         
-        # Clean up the text and handle paragraph markers
+        # Clean up the text
         clean_text = verse_text.strip()
         
-        # Replace ¶ with proper paragraph breaks within the verse
+        # Handle paragraph markers (pilcrows) - only KJV has them
         if '¶' in clean_text:
-            # Split by ¶ and create proper paragraphs
+            # Split by ¶ and process each part
             parts = clean_text.split('¶')
-            paragraphs = []
             
-            for i, part in enumerate(parts):
-                part = part.strip()
-                if part:  # Only add non-empty parts
-                    if i == 0:
-                        # First part - this is the main verse content
-                        paragraphs.append(f'<span class="verse"><span class="verse-number">{verse_number}</span> {part}</span>')
-                    else:
-                        # Subsequent parts - these are new paragraphs within the verse
-                        paragraphs.append(f'<p class="verse-paragraph">{part}</p>')
+            # Filter out empty parts
+            non_empty_parts = [part.strip() for part in parts if part.strip()]
             
-            # Join all paragraphs
-            return ''.join(paragraphs)
+            if not non_empty_parts:
+                return f'<span class="verse"><span class="verse-number">{verse_number}</span> {clean_text}</span>'
+            
+            # Start with opening <p> tag
+            html_parts = ['<p class="verse">']
+            
+            for i, part in enumerate(non_empty_parts):
+                if i == 0:
+                    # First non-empty part - add verse number and content
+                    html_parts.append(f'<span class="verse-number">{verse_number}</span> {part}')
+                else:
+                    # Subsequent parts - close previous paragraph and start new one
+                    html_parts.append('</p><p class="verse-paragraph">')
+                    html_parts.append(part)
+            
+            # Close the final paragraph
+            html_parts.append('</p>')
+            
+            return ''.join(html_parts)
         else:
             # No paragraph markers, just wrap in verse span
             return f'<span class="verse"><span class="verse-number">{verse_number}</span> {clean_text}</span>'
