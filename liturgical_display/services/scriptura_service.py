@@ -406,7 +406,16 @@ class ScripturaService:
             Tuple of (book, chapter, verse)
         """
         try:
-            # Handle different reference formats
+            # Handle cross-chapter references like "John 3:16-4:1"
+            if '-' in reference and ':' in reference:
+                # Check if it's cross-chapter (has two colons)
+                colon_count = reference.count(':')
+                if colon_count >= 2:
+                    # This is a cross-chapter reference - not supported yet
+                    log(f"[scriptura_service.py] Cross-chapter reference not supported: {reference}")
+                    return "Genesis", "1", "1"  # Fallback
+            
+            # Handle single chapter references
             if ':' in reference:
                 # Format: "Book Chapter:Verse" or "Book Chapter:Start-End"
                 parts = reference.split(':')
@@ -423,8 +432,8 @@ class ScripturaService:
                         book = book_chapter
                         chapter = "1"
                     
-                    # Handle verse ranges (keep the full range)
-                    verse = verse_part
+                    # Clean up verse part - remove suffixes like "a", "b", etc.
+                    verse = self._clean_verse_suffix(verse_part)
                     
                     return book, chapter, verse
             
@@ -434,6 +443,26 @@ class ScripturaService:
         except Exception as e:
             log(f"[scriptura_service.py] Error parsing reference '{reference}': {e}")
             return "Genesis", "1", "1"  # Fallback
+    
+    def _clean_verse_suffix(self, verse_part: str) -> str:
+        """
+        Clean up verse suffixes like 'a', 'b', etc.
+        
+        Args:
+            verse_part: Verse part like "2-19a" or "16"
+            
+        Returns:
+            Cleaned verse part like "2-19" or "16"
+        """
+        if '-' in verse_part:
+            # Handle ranges like "2-19a"
+            start, end = verse_part.split('-', 1)
+            # Remove suffix from end part
+            end_clean = ''.join(c for c in end if c.isdigit())
+            return f"{start}-{end_clean}"
+        else:
+            # Handle single verses like "16a"
+            return ''.join(c for c in verse_part if c.isdigit())
     
     def get_available_versions(self) -> list:
         """
