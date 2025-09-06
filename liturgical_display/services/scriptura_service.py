@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 class ScripturaService:
     """Service for fetching reading contents from Scriptura API."""
     
-    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://www.scriptura-api.com", config: Optional[Dict[str, Any]] = None, version: str = "kjv"):
+    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://www.scriptura-api.com", config: Optional[Dict[str, Any]] = None, version: str = "asv"):
         """Initialize the Scriptura service."""
         # Scriptura API is free and doesn't require an API key
         self.api_key = None  # Not needed for this API
