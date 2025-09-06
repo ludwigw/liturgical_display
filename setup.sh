@@ -129,7 +129,8 @@ BACKUP_FILE="config.yml.bak"
 # If config.yml exists, read current values
 if [ -f "config.yml" ]; then
     CURRENT_VCOM=$(grep '^vcom:' "config.yml" | awk '{print $2}')
-    CURRENT_OPENAI_KEY=$(grep '^openai_api_key:' "config.yml" | sed 's/^openai_api_key: *"\(.*\)"$/\1/')
+    # Extract OpenAI key, handling both quoted and unquoted formats
+    CURRENT_OPENAI_KEY=$(grep '^openai_api_key:' "config.yml" | sed -E 's/^openai_api_key: *"?([^"]*)"?$/\1/' | sed 's/^your-openai-api-key-here$//')
     echo "Existing config.yml found."
     echo "Backing up current config.yml to config.yml.bak."
     cp "config.yml" "config.yml.bak"
@@ -152,11 +153,20 @@ else
     fi
     
     echo ""
-    echo "Please enter your OpenAI API key for reflection generation (or press Enter to skip):"
+    if [ -n "$CURRENT_OPENAI_KEY" ]; then
+        echo "Please enter your OpenAI API key for reflection generation [current: ${CURRENT_OPENAI_KEY:0:20}...] (or press Enter to keep current):"
+    else
+        echo "Please enter your OpenAI API key for reflection generation (or press Enter to skip):"
+    fi
     read -r USER_OPENAI_KEY
     if [ -z "$USER_OPENAI_KEY" ]; then
-        USER_OPENAI_KEY="your-openai-api-key-here"
-        echo "⚠️  OpenAI API key not provided. You can add it later by editing config.yml"
+        if [ -n "$CURRENT_OPENAI_KEY" ]; then
+            USER_OPENAI_KEY="$CURRENT_OPENAI_KEY"
+            echo "✅ Keeping existing OpenAI API key"
+        else
+            USER_OPENAI_KEY="your-openai-api-key-here"
+            echo "⚠️  OpenAI API key not provided. You can add it later by editing config.yml"
+        fi
     else
         echo "✅ OpenAI API key will be configured"
     fi
