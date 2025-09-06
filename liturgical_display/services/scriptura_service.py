@@ -178,11 +178,31 @@ class ScripturaService:
         if not verse_text:
             return ""
         
-        # Clean up the text (remove verse number if it's already there)
+        # Clean up the text and handle paragraph markers
         clean_text = verse_text.strip()
         
-        # Wrap in structured HTML
-        return f'<span class="verse"><span class="verse-number">{verse_number}</span> {clean_text}</span>'
+        # Replace ¶ with proper paragraph breaks within the verse
+        if '¶' in clean_text:
+            # Split by ¶ and create paragraphs within the verse
+            parts = clean_text.split('¶')
+            verse_content = []
+            
+            for i, part in enumerate(parts):
+                part = part.strip()
+                if part:  # Only add non-empty parts
+                    if i == 0:
+                        # First part - this is the main verse content
+                        verse_content.append(part)
+                    else:
+                        # Subsequent parts - these are paragraph breaks within the verse
+                        verse_content.append(f'<br><br>{part}')
+            
+            # Join all parts and wrap in verse span
+            formatted_text = ''.join(verse_content)
+            return f'<span class="verse"><span class="verse-number">{verse_number}</span> {formatted_text}</span>'
+        else:
+            # No paragraph markers, just wrap in verse span
+            return f'<span class="verse"><span class="verse-number">{verse_number}</span> {clean_text}</span>'
 
     def _get_single_verse(self, book: str, chapter: str, verse: str) -> str:
         """
