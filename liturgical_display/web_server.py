@@ -273,6 +273,43 @@ def api_date_next_artwork(date_str):
         logger.error(f"Error serving next artwork for {date_str}: {e}")
         abort(500)
 
+@app.route('/api/reflection/today')
+def api_today_reflection():
+    """API endpoint for today's liturgical reflection."""
+    try:
+        today_date = date.today()
+        reflection = data_service.get_reflection(today_date)
+        return jsonify(reflection)
+    except Exception as e:
+        logger.error(f"Error getting today's reflection: {e}")
+        abort(500)
+
+@app.route('/api/reflection/<date_str>')
+def api_date_reflection(date_str):
+    """API endpoint for liturgical reflection for a specific date."""
+    try:
+        parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        reflection = data_service.get_reflection(parsed_date)
+        return jsonify(reflection)
+    except ValueError:
+        abort(400, description="Invalid date format. Use YYYY-MM-DD")
+    except Exception as e:
+        logger.error(f"Error getting reflection for {date_str}: {e}")
+        abort(500)
+
+@app.route('/api/tokens')
+def api_token_usage():
+    """API endpoint for token usage statistics."""
+    try:
+        tokens_used = data_service.get_token_usage()
+        return jsonify({
+            'tokens_used': tokens_used,
+            'estimated_cost_usd': round(tokens_used * 0.00015 / 1000, 4)  # Rough estimate for gpt-4o-mini
+        })
+    except Exception as e:
+        logger.error(f"Error getting token usage: {e}")
+        abort(500)
+
 @app.errorhandler(400)
 def bad_request(error):
     """Handle 400 errors."""
