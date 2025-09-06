@@ -16,4 +16,4 @@ web_server:
 
 # API Keys for reflection generation
 openai_api_key: "your-openai-api-key-here"
-scriptura_api_key: "your-scriptura-api-key-here"  # Optional
+# Note: Scriptura API is free and doesn't require an API key

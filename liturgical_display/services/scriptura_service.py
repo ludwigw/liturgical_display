@@ -16,20 +16,11 @@ logger = logging.getLogger(__name__)
 class ScripturaService:
     """Service for fetching reading contents from Scriptura API."""
     
-    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://api.scriptura.org", config: Optional[Dict[str, Any]] = None):
+    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://api.scriptura-api.com", config: Optional[Dict[str, Any]] = None):
         """Initialize the Scriptura service."""
-        # Get API key from config, environment, or parameter
-        if config and 'scriptura_api_key' in config:
-            self.api_key = config['scriptura_api_key']
-        elif api_key:
-            self.api_key = api_key
-        else:
-            self.api_key = os.getenv('SCRIPTURA_API_KEY')
-        
+        # Scriptura API is free and doesn't require an API key
+        self.api_key = None  # Not needed for this API
         self.base_url = base_url.rstrip('/')
-        
-        if not self.api_key:
-            log("[scriptura_service.py] WARNING: No Scriptura API key provided. Reading contents will not be available.")
         
         log(f"[scriptura_service.py] Initialized with base URL: {self.base_url}")
     
@@ -90,19 +81,19 @@ class ScripturaService:
             # Clean up the reference for the API
             clean_reference = self._clean_reference(reference)
             
-            # Make API request
-            url = f"{self.base_url}/v1/text"
+            # Parse reference to get book, chapter, verse
+            book, chapter, verse = self._parse_reference(clean_reference)
+            
+            # Make API request to Scriptura API
+            url = f"{self.base_url}/api/verse"
             params = {
-                'reference': clean_reference,
-                'version': 'NRSV',  # Use NRSV as it's commonly used in liturgical contexts
-                'format': 'text'
-            }
-            headers = {
-                'Authorization': f'Bearer {self.api_key}',
-                'Content-Type': 'application/json'
+                'book': book,
+                'chapter': chapter,
+                'verse': verse,
+                'version': 'kjv'  # Use KJV as it's available and commonly used
             }
             
-            response = requests.get(url, params=params, headers=headers, timeout=10)
+            response = requests.get(url, params=params, timeout=10)
             response.raise_for_status()
             
             data = response.json()
@@ -110,13 +101,8 @@ class ScripturaService:
             # Extract text from response
             if 'text' in data:
                 return data['text'].strip()
-            elif 'verses' in data:
-                # If response has verses array, join them
-                verses = data['verses']
-                if isinstance(verses, list):
-                    return ' '.join(verses).strip()
-                else:
-                    return str(verses).strip()
+            elif 'verse' in data:
+                return data['verse'].strip()
             else:
                 log(f"[scriptura_service.py] Unexpected API response format for {reference}")
                 return f"[Reading: {reference}]"
@@ -158,6 +144,49 @@ class ScripturaService:
         
         return cleaned
     
+    def _parse_reference(self, reference: str) -> tuple[str, str, str]:
+        """
+        Parse a Bible reference into book, chapter, verse.
+        
+        Args:
+            reference: Bible reference (e.g., "John 3:16", "Psalm 23:1-6")
+            
+        Returns:
+            Tuple of (book, chapter, verse)
+        """
+        try:
+            # Handle different reference formats
+            if ':' in reference:
+                # Format: "Book Chapter:Verse" or "Book Chapter:Start-End"
+                parts = reference.split(':')
+                if len(parts) == 2:
+                    book_chapter = parts[0].strip()
+                    verse_part = parts[1].strip()
+                    
+                    # Split book and chapter
+                    book_chapter_parts = book_chapter.rsplit(' ', 1)
+                    if len(book_chapter_parts) == 2:
+                        book = book_chapter_parts[0].strip()
+                        chapter = book_chapter_parts[1].strip()
+                    else:
+                        book = book_chapter
+                        chapter = "1"
+                    
+                    # Handle verse ranges (take first verse)
+                    if '-' in verse_part:
+                        verse = verse_part.split('-')[0].strip()
+                    else:
+                        verse = verse_part
+                    
+                    return book, chapter, verse
+            
+            # If no colon, assume it's just a book name
+            return reference.strip(), "1", "1"
+            
+        except Exception as e:
+            log(f"[scriptura_service.py] Error parsing reference '{reference}': {e}")
+            return "Genesis", "1", "1"  # Fallback
+    
     def test_connection(self) -> bool:
         """
         Test the connection to Scriptura API.
@@ -165,9 +194,6 @@ class ScripturaService:
         Returns:
             True if connection successful, False otherwise
         """
-        if not self.api_key:
-            return False
-        
         try:
             # Test with a simple reference
             test_text = self._get_reading_text("John 3:16")

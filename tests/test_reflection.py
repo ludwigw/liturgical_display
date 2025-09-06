@@ -10,7 +10,7 @@ import sys
 from datetime import date
 
 # Add the project root to Python path
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from liturgical_display.services.data_service import DataService
 
@@ -31,28 +31,21 @@ def test_reflection():
         except Exception as e:
             print(f"⚠️  Could not load config: {e}")
     
-    # Check for API keys in config or environment
+    # Check for OpenAI API key in config or environment
     openai_key = None
-    scriptura_key = None
     
     if config:
         openai_key = config.get('openai_api_key')
-        scriptura_key = config.get('scriptura_api_key')
     
     if not openai_key:
         openai_key = os.getenv('OPENAI_API_KEY')
-    
-    if not scriptura_key:
-        scriptura_key = os.getenv('SCRIPTURA_API_KEY')
     
     if not openai_key:
         print("❌ OpenAI API key not found")
         print("   Set it in config.yml or as environment variable OPENAI_API_KEY")
         return False
     
-    if not scriptura_key:
-        print("⚠️  Scriptura API key not found")
-        print("   Reading contents will not be available, but reflections will still work")
+    print("✅ Scriptura API is free and doesn't require an API key")
     
     try:
         # Initialize data service with config
