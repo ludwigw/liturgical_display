@@ -72,7 +72,13 @@ class ScripturaService:
             clean_reference = self._clean_reference(reference)
             
             # Parse reference to get book, chapter, verse range
-            book, chapter, verse_range = self._parse_reference(clean_reference)
+            parsed = self._parse_reference(clean_reference)
+            
+            if parsed is None:
+                # Complex reference - handle with special logic
+                return self._handle_complex_reference(clean_reference)
+            
+            book, chapter, verse_range = parsed
             
             # Get the entire chapter in one API call
             chapter_data = self._get_chapter_data(book, chapter)
@@ -121,6 +127,180 @@ class ScripturaService:
                 
         except Exception as e:
             log(f"[scriptura_service.py] ERROR getting text for {reference}: {e}")
+            return f"[Reading: {reference}]"
+    
+    def _handle_complex_reference(self, reference: str) -> str:
+        """
+        Handle complex references like "Psalm 139:1-5, 12-17" or "John 3:16-4:1".
+        
+        Args:
+            reference: Complex Bible reference
+            
+        Returns:
+            Formatted HTML text
+        """
+        try:
+            # Handle discontinuous ranges like "Psalm 139:1-5, 12-17"
+            if ',' in reference:
+                return self._handle_discontinuous_range(reference)
+            
+            # Handle cross-chapter references like "John 3:16-4:1"
+            if '-' in reference and ':' in reference:
+                colon_count = reference.count(':')
+                if colon_count >= 2:
+                    return self._handle_cross_chapter_reference(reference)
+            
+            # If we get here, it's an unexpected complex reference
+            log(f"[scriptura_service.py] Unexpected complex reference: {reference}")
+            return f"[Reading: {reference}]"
+            
+        except Exception as e:
+            log(f"[scriptura_service.py] Error handling complex reference '{reference}': {e}")
+            return f"[Reading: {reference}]"
+    
+    def _handle_discontinuous_range(self, reference: str) -> str:
+        """
+        Handle discontinuous ranges like "Psalm 139:1-5, 12-17".
+        
+        Args:
+            reference: Reference with commas
+            
+        Returns:
+            Formatted HTML text
+        """
+        try:
+            # Split by comma to get individual ranges
+            parts = reference.split(',')
+            all_verses = []
+            
+            for part in parts:
+                part = part.strip()
+                if ':' in part:
+                    # Parse each part as a separate reference
+                    book_chapter, verse_part = part.split(':', 1)
+                    book_chapter_parts = book_chapter.rsplit(' ', 1)
+                    
+                    if len(book_chapter_parts) == 2:
+                        book = book_chapter_parts[0].strip()
+                        chapter = book_chapter_parts[1].strip()
+                    else:
+                        book = book_chapter
+                        chapter = "1"
+                    
+                    # Get chapter data
+                    chapter_data = self._get_chapter_data(book, chapter)
+                    if not chapter_data:
+                        continue
+                    
+                    # Parse verse range
+                    verse_part = self._clean_verse_suffix(verse_part)
+                    if '-' in verse_part:
+                        start_verse, end_verse = verse_part.split('-', 1)
+                        start_verse = int(start_verse.strip())
+                        end_verse = int(end_verse.strip())
+                        
+                        for verse_num in range(start_verse, end_verse + 1):
+                            verse_text = chapter_data['verses'].get(str(verse_num))
+                            if verse_text:
+                                all_verses.append({
+                                    'verse': str(verse_num),
+                                    'text': verse_text
+                                })
+                    else:
+                        # Single verse
+                        verse_text = chapter_data['verses'].get(verse_part)
+                        if verse_text:
+                            all_verses.append({
+                                'verse': verse_part,
+                                'text': verse_text
+                            })
+            
+            if all_verses:
+                return self._format_reading_paragraph(all_verses)
+            else:
+                return f"[Reading: {reference}]"
+                
+        except Exception as e:
+            log(f"[scriptura_service.py] Error handling discontinuous range '{reference}': {e}")
+            return f"[Reading: {reference}]"
+    
+    def _handle_cross_chapter_reference(self, reference: str) -> str:
+        """
+        Handle cross-chapter references like "John 3:16-4:1".
+        
+        Args:
+            reference: Cross-chapter reference
+            
+        Returns:
+            Formatted HTML text
+        """
+        try:
+            # Parse cross-chapter reference like "John 3:16-4:1"
+            # This means: from John chapter 3 verse 16 to John chapter 4 verse 1
+            
+            # Find the pattern: Book Chapter:Verse-Chapter:Verse
+            import re
+            pattern = r'^(.+?)\s+(\d+):(\d+)-(\d+):(\d+)$'
+            match = re.match(pattern, reference.strip())
+            
+            if not match:
+                return f"[Reading: {reference}]"
+            
+            book = match.group(1).strip()
+            start_chapter = int(match.group(2))
+            start_verse = int(match.group(3))
+            end_chapter = int(match.group(4))
+            end_verse = int(match.group(5))
+            
+            all_verses = []
+            
+            # Handle verses from start chapter
+            if start_chapter == end_chapter:
+                # Same chapter - just get the range
+                chapter_data = self._get_chapter_data(book, str(start_chapter))
+                if chapter_data:
+                    for verse_num in range(start_verse, end_verse + 1):
+                        verse_text = chapter_data['verses'].get(str(verse_num))
+                        if verse_text:
+                            all_verses.append({
+                                'verse': str(verse_num),
+                                'text': verse_text
+                            })
+            else:
+                # Cross-chapter - get verses from start chapter to end
+                # First, get remaining verses from start chapter
+                chapter_data = self._get_chapter_data(book, str(start_chapter))
+                if chapter_data:
+                    # Get all verses from start_verse to end of chapter
+                    verse_numbers = [int(v) for v in chapter_data['verses'].keys() if v.isdigit()]
+                    if verse_numbers:
+                        max_verse = max(verse_numbers)
+                        for verse_num in range(start_verse, max_verse + 1):
+                            verse_text = chapter_data['verses'].get(str(verse_num))
+                            if verse_text:
+                                all_verses.append({
+                                    'verse': str(verse_num),
+                                    'text': verse_text
+                                })
+                
+                # Then get verses from end chapter
+                chapter_data = self._get_chapter_data(book, str(end_chapter))
+                if chapter_data:
+                    for verse_num in range(1, end_verse + 1):
+                        verse_text = chapter_data['verses'].get(str(verse_num))
+                        if verse_text:
+                            all_verses.append({
+                                'verse': str(verse_num),
+                                'text': verse_text
+                            })
+            
+            if all_verses:
+                return self._format_reading_paragraph(all_verses)
+            else:
+                return f"[Reading: {reference}]"
+            
+        except Exception as e:
+            log(f"[scriptura_service.py] Error handling cross-chapter reference '{reference}': {e}")
             return f"[Reading: {reference}]"
     
     def _get_chapter_data(self, book: str, chapter: str) -> dict:
@@ -406,14 +586,18 @@ class ScripturaService:
             Tuple of (book, chapter, verse)
         """
         try:
+            # Handle complex references with commas (discontinuous ranges)
+            if ',' in reference:
+                # This is a complex reference - handle in _get_reading_text
+                return None
+            
             # Handle cross-chapter references like "John 3:16-4:1"
             if '-' in reference and ':' in reference:
                 # Check if it's cross-chapter (has two colons)
                 colon_count = reference.count(':')
                 if colon_count >= 2:
-                    # This is a cross-chapter reference - not supported yet
-                    log(f"[scriptura_service.py] Cross-chapter reference not supported: {reference}")
-                    return "Genesis", "1", "1"  # Fallback
+                    # This is a cross-chapter reference - handle in _get_reading_text
+                    return None
             
             # Handle single chapter references
             if ':' in reference:
