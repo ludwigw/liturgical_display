@@ -16,9 +16,16 @@ logger = logging.getLogger(__name__)
 class ScripturaService:
     """Service for fetching reading contents from Scriptura API."""
     
-    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://api.scriptura.org"):
+    def __init__(self, api_key: Optional[str] = None, base_url: str = "https://api.scriptura.org", config: Optional[Dict[str, Any]] = None):
         """Initialize the Scriptura service."""
-        self.api_key = api_key or os.getenv('SCRIPTURA_API_KEY')
+        # Get API key from config, environment, or parameter
+        if config and 'scriptura_api_key' in config:
+            self.api_key = config['scriptura_api_key']
+        elif api_key:
+            self.api_key = api_key
+        else:
+            self.api_key = os.getenv('SCRIPTURA_API_KEY')
+        
         self.base_url = base_url.rstrip('/')
         
         if not self.api_key:

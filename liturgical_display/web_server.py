@@ -19,8 +19,8 @@ from .utils import log
 # Initialize Flask app
 app = Flask(__name__, static_folder='static')
 
-# Initialize services
-data_service = DataService()
+# Initialize services (will be reinitialized with config in create_app)
+data_service = None
 wikipedia_service = WikipediaService()
 
 # Configure logging
@@ -48,6 +48,10 @@ def create_app(config=None):
     app.config['PORT'] = config.get('port', 8080)
     app.config['DEBUG'] = config.get('debug', False)
     app.config['AUTO_RELOAD'] = config.get('auto_reload', False)
+    
+    # Initialize data service with config
+    global data_service
+    data_service = DataService(config=config)
     
     # Add context processor for current time and data service
     @app.context_processor
@@ -87,9 +91,16 @@ def today():
         today_date = date.today()
         liturgical_data = data_service.get_liturgical_data(today_date)
         wikipedia_summary = None
+        reflection = None
         
-        if liturgical_data.get('url'):
-            wikipedia_summary = wikipedia_service.get_summary(liturgical_data['url'])
+        # Try to get reflection first
+        try:
+            reflection = data_service.get_reflection(today_date)
+        except Exception as e:
+            log(f"[web_server.py] Could not generate reflection: {e}")
+            # Fall back to Wikipedia summary if reflection fails
+            if liturgical_data.get('url'):
+                wikipedia_summary = wikipedia_service.get_summary(liturgical_data['url'])
         
         # Get artwork info for today
         artwork_info = data_service.get_artwork_info(today_date)
@@ -102,6 +113,7 @@ def today():
         return render_template('date.html', 
                              data=liturgical_data, 
                              wikipedia_summary=wikipedia_summary,
+                             reflection=reflection,
                              date=today_date,
                              artwork_info=artwork_info,
                              next_artwork=next_artwork_info)
@@ -117,9 +129,16 @@ def date_page(date_str):
         parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         liturgical_data = data_service.get_liturgical_data(parsed_date)
         wikipedia_summary = None
+        reflection = None
         
-        if liturgical_data.get('url'):
-            wikipedia_summary = wikipedia_service.get_summary(liturgical_data['url'])
+        # Try to get reflection first
+        try:
+            reflection = data_service.get_reflection(parsed_date)
+        except Exception as e:
+            log(f"[web_server.py] Could not generate reflection: {e}")
+            # Fall back to Wikipedia summary if reflection fails
+            if liturgical_data.get('url'):
+                wikipedia_summary = wikipedia_service.get_summary(liturgical_data['url'])
         
         # Get artwork info for this date
         artwork_info = data_service.get_artwork_info(parsed_date)
@@ -132,6 +151,7 @@ def date_page(date_str):
         return render_template('date.html', 
                              data=liturgical_data, 
                              wikipedia_summary=wikipedia_summary,
+                             reflection=reflection,
                              date=parsed_date,
                              artwork_info=artwork_info,
                              next_artwork=next_artwork_info)

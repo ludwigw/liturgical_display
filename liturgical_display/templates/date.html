@@ -55,7 +55,14 @@
     </div>
     {% endif %}
 
-    {% if wikipedia_summary %}
+    {% if reflection %}
+    <div class="wikipedia-summary">
+        <p>{{ reflection.reflection }}</p>
+        {% if reflection.tokens_used %}
+        <small>Generated with {{ reflection.tokens_used }} tokens</small>
+        {% endif %}
+    </div>
+    {% elif wikipedia_summary %}
     <div class="wikipedia-summary">
         <p>{{ wikipedia_summary.extract }}</p>
         {% if wikipedia_summary.content_url %}
@@ -65,20 +72,6 @@
         {% endif %}
     </div>
     {% endif %}
-
-    <div class="reflection-section" id="reflection-section">
-        <h3>Daily Reflection</h3>
-        <div class="reflection-loading">Loading reflection...</div>
-        <div class="reflection-content" id="reflection-content" style="display: none;">
-            <div class="reflection-text" id="reflection-text"></div>
-            <div class="reflection-meta">
-                <small id="reflection-meta"></small>
-            </div>
-        </div>
-        <div class="reflection-error" id="reflection-error" style="display: none;">
-            <p>Unable to load reflection at this time.</p>
-        </div>
-    </div>
 
     <ul class="api-links">
         <li><a href="/api/info/{{ date.strftime('%Y-%m-%d') }}">JSON</a></li>
@@ -90,51 +83,10 @@
         {% endif %}
         <li><a href="/api/image/{{ date.strftime('%Y-%m-%d') }}/png">ePaper PNG</a></li>
         <li><a href="/api/image/{{ date.strftime('%Y-%m-%d') }}/bmp">ePaper BMP</a></li>
+        {% if reflection %}
         <li><a href="/api/reflection/{{ date.strftime('%Y-%m-%d') }}">Reflection JSON</a></li>
+        {% endif %}
         <li><a href="/today">Go to Today</a></li>
     </ul>
 </div>
-
-<script>
-// Load reflection when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    const dateStr = '{{ date.strftime('%Y-%m-%d') }}';
-    const loadingEl = document.getElementById('reflection-loading');
-    const contentEl = document.getElementById('reflection-content');
-    const errorEl = document.getElementById('reflection-error');
-    const textEl = document.getElementById('reflection-text');
-    const metaEl = document.getElementById('reflection-meta');
-    
-    fetch(`/api/reflection/${dateStr}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error(`HTTP ${response.status}`);
-            }
-            return response.json();
-        })
-        .then(data => {
-            // Hide loading, show content
-            loadingEl.style.display = 'none';
-            contentEl.style.display = 'block';
-            
-            // Set reflection text
-            textEl.textContent = data.reflection;
-            
-            // Set metadata
-            const metaParts = [];
-            if (data.season) metaParts.push(data.season);
-            if (data.tokens_used) metaParts.push(`${data.tokens_used} tokens`);
-            if (data.generated_at) {
-                const date = new Date(data.generated_at);
-                metaParts.push(`Generated ${date.toLocaleString()}`);
-            }
-            metaEl.textContent = metaParts.join(' • ');
-        })
-        .catch(error => {
-            console.error('Error loading reflection:', error);
-            loadingEl.style.display = 'none';
-            errorEl.style.display = 'block';
-        });
-});
-</script>
 {% endblock %} 

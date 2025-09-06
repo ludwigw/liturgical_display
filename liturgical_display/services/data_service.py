@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 class DataService:
     """Service for accessing liturgical data and generating images."""
     
-    def __init__(self, cache_dir: Optional[str] = None):
+    def __init__(self, cache_dir: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
         """Initialize the data service."""
         # Use liturgical-calendar's cache directory structure
         if cache_dir:
@@ -38,9 +38,9 @@ class DataService:
         self.images_cache_dir = Path(self.cache_dir) / "images"
         self.images_cache_dir.mkdir(parents=True, exist_ok=True)
         
-        # Initialize reflection and scriptura services
-        self.reflection_service = ReflectionService(cache_dir=self.cache_dir)
-        self.scriptura_service = ScripturaService()
+        # Initialize reflection and scriptura services with config
+        self.reflection_service = ReflectionService(cache_dir=self.cache_dir, config=config)
+        self.scriptura_service = ScripturaService(config=config)
         
         log(f"[data_service.py] Initialized with cache dir: {self.cache_dir}")
     

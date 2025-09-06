@@ -19,20 +19,45 @@ def test_reflection():
     print("Testing Liturgical Reflection Generator")
     print("=" * 50)
     
-    # Check for required environment variables
-    if not os.getenv('OPENAI_API_KEY'):
-        print("❌ OPENAI_API_KEY environment variable not set")
-        print("   Set it with: export OPENAI_API_KEY='your-api-key-here'")
+    # Load config if available
+    config = None
+    config_path = 'config.yml'
+    if os.path.exists(config_path):
+        try:
+            import yaml
+            with open(config_path, 'r') as f:
+                config = yaml.safe_load(f)
+            print(f"✅ Loaded config from {config_path}")
+        except Exception as e:
+            print(f"⚠️  Could not load config: {e}")
+    
+    # Check for API keys in config or environment
+    openai_key = None
+    scriptura_key = None
+    
+    if config:
+        openai_key = config.get('openai_api_key')
+        scriptura_key = config.get('scriptura_api_key')
+    
+    if not openai_key:
+        openai_key = os.getenv('OPENAI_API_KEY')
+    
+    if not scriptura_key:
+        scriptura_key = os.getenv('SCRIPTURA_API_KEY')
+    
+    if not openai_key:
+        print("❌ OpenAI API key not found")
+        print("   Set it in config.yml or as environment variable OPENAI_API_KEY")
         return False
     
-    if not os.getenv('SCRIPTURA_API_KEY'):
-        print("⚠️  SCRIPTURA_API_KEY environment variable not set")
+    if not scriptura_key:
+        print("⚠️  Scriptura API key not found")
         print("   Reading contents will not be available, but reflections will still work")
     
     try:
-        # Initialize data service
+        # Initialize data service with config
         print("Initializing data service...")
-        data_service = DataService()
+        data_service = DataService(config=config)
         
         # Test with today's date
         today = date.today()

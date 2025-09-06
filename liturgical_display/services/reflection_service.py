@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 class ReflectionService:
     """Service for generating liturgical reflections using LLM."""
     
-    def __init__(self, cache_dir: Optional[str] = None, openai_api_key: Optional[str] = None):
+    def __init__(self, cache_dir: Optional[str] = None, openai_api_key: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
         """Initialize the reflection service."""
         if cache_dir:
             self.cache_dir = Path(cache_dir)
@@ -32,10 +32,17 @@ class ReflectionService:
         self.reflections_cache_dir = self.cache_dir / "reflections"
         self.reflections_cache_dir.mkdir(parents=True, exist_ok=True)
         
-        # Initialize OpenAI client
-        api_key = openai_api_key or os.getenv('OPENAI_API_KEY')
+        # Get API key from config, environment, or parameter
+        api_key = None
+        if config and 'openai_api_key' in config:
+            api_key = config['openai_api_key']
+        elif openai_api_key:
+            api_key = openai_api_key
+        else:
+            api_key = os.getenv('OPENAI_API_KEY')
+        
         if not api_key:
-            raise ValueError("OpenAI API key not provided. Set OPENAI_API_KEY environment variable.")
+            raise ValueError("OpenAI API key not provided. Set in config file, environment variable, or parameter.")
         
         self.client = openai.OpenAI(api_key=api_key)
         
