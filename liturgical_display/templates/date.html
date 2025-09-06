@@ -57,9 +57,13 @@
 
     {% if reflection %}
     <div class="wikipedia-summary">
-        <p>{{ reflection.reflection }}</p>
-        {% if reflection.tokens_used %}
-        <small>Generated with {{ reflection.tokens_used }} tokens</small>
+        {% for paragraph in reflection.reflection.split('\n\n') %}
+        <p>{{ paragraph }}</p>
+        {% endfor %}
+        {% if data.url %}
+        <a href="{{ data.url }}" class="wikipedia-link" target="_blank">
+            Read more on Wikipedia
+        </a>
         {% endif %}
     </div>
     {% elif wikipedia_summary %}
