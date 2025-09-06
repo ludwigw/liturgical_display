@@ -81,9 +81,10 @@ fi
 echo "Setup complete! Virtual environment is ready."
 echo ""
 echo "Next steps:"
-echo "1. Edit config.yaml to match your environment"
-echo "2. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
-echo "3. (Optional) Enable systemd service for daily runs"
+echo "1. Edit config.yml to match your environment"
+echo "2. Add your OpenAI API key to config.yml for reflection generation"
+echo "3. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
+echo "4. (Optional) Enable systemd service for daily runs"
 
 echo ""
 echo "🔍 Running installation validation..."
@@ -145,23 +146,31 @@ fi
 OUTPUT_IMAGE="$PROJECT_DIR/today.png"
 LOG_FILE="$PROJECT_DIR/logs/display.log"
 
-# Write new config.yaml
-echo "Writing config.yaml with detected defaults..."
-cat > "$CONFIG_FILE" <<EOF
-# Where to save the rendered image for today
+# Write new config.yml
+echo "Writing config.yml with detected defaults..."
+cat > "config.yml" <<EOF
+# Main config.yml for liturgical_display
+# Package handles its own caching internally
+
+# Display settings
 output_image: $OUTPUT_IMAGE
-
-# VCOM voltage for your eInk display (see sticker on FPC cable, e.g. -2.51)
 vcom: $USER_VCOM
-
-# If true, Pi will shut down after updating the display (for use with timed power/RTC)
 shutdown_after_display: false
-
-# Path to log file
 log_file: $LOG_FILE
+
+# Web server configuration
+web_server:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+  debug: false
+
+# API Keys for reflection generation
+openai_api_key: "your-openai-api-key-here"
+# Note: Scriptura API is free and doesn't require an API key
 EOF
 
-echo "config.yaml written. You can edit this file to further customize your setup."
+echo "config.yml written. You can edit this file to further customize your setup."
 
 # --- SYSTEMD SETUP ---
 # Skip systemd setup in CI environments
