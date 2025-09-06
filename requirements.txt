@@ -3,4 +3,5 @@ Pillow
 Flask
 Jinja2
 requests
+openai
 liturgical-calendar @ git+https://github.com/ludwigw/liturgical-calendar.git 

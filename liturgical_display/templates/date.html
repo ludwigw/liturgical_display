@@ -55,7 +55,18 @@
     </div>
     {% endif %}
 
-    {% if wikipedia_summary %}
+    {% if reflection %}
+    <div class="wikipedia-summary">
+        {% for paragraph in reflection.reflection.split('\n\n') %}
+        <p>{{ paragraph }}</p>
+        {% endfor %}
+        {% if data.url %}
+        <a href="{{ data.url }}" class="wikipedia-link" target="_blank">
+            Read more on Wikipedia
+        </a>
+        {% endif %}
+    </div>
+    {% elif wikipedia_summary %}
     <div class="wikipedia-summary">
         <p>{{ wikipedia_summary.extract }}</p>
         {% if wikipedia_summary.content_url %}
@@ -76,6 +87,9 @@
         {% endif %}
         <li><a href="/api/image/{{ date.strftime('%Y-%m-%d') }}/png">ePaper PNG</a></li>
         <li><a href="/api/image/{{ date.strftime('%Y-%m-%d') }}/bmp">ePaper BMP</a></li>
+        {% if reflection %}
+        <li><a href="/api/reflection/{{ date.strftime('%Y-%m-%d') }}">Reflection JSON</a></li>
+        {% endif %}
         <li><a href="/today">Go to Today</a></li>
     </ul>
 </div>

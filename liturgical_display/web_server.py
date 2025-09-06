@@ -19,8 +19,8 @@ from .utils import log
 # Initialize Flask app
 app = Flask(__name__, static_folder='static')
 
-# Initialize services
-data_service = DataService()
+# Initialize services (will be reinitialized with config in create_app)
+data_service = None
 wikipedia_service = WikipediaService()
 
 # Configure logging
@@ -30,7 +30,7 @@ def create_app(config=None):
     """Create and configure the Flask application."""
     if config is None:
         # Load web server config
-        config_path = os.environ.get('LITURGICAL_CONFIG', 'web_server_config.yaml')
+        config_path = os.environ.get('LITURGICAL_CONFIG', 'config.yml')
         try:
             with open(config_path) as f:
                 config = yaml.safe_load(f)
@@ -48,6 +48,10 @@ def create_app(config=None):
     app.config['PORT'] = config.get('port', 8080)
     app.config['DEBUG'] = config.get('debug', False)
     app.config['AUTO_RELOAD'] = config.get('auto_reload', False)
+    
+    # Initialize data service with config
+    global data_service
+    data_service = DataService(config=config)
     
     # Add context processor for current time and data service
     @app.context_processor
@@ -87,9 +91,16 @@ def today():
         today_date = date.today()
         liturgical_data = data_service.get_liturgical_data(today_date)
         wikipedia_summary = None
+        reflection = None
         
-        if liturgical_data.get('url'):
-            wikipedia_summary = wikipedia_service.get_summary(liturgical_data['url'])
+        # Try to get reflection first
+        try:
+            reflection = data_service.get_reflection(today_date)
+        except Exception as e:
+            log(f"[web_server.py] Could not generate reflection: {e}")
+            # Fall back to Wikipedia summary if reflection fails
+            if liturgical_data.get('url'):
+                wikipedia_summary = wikipedia_service.get_summary(liturgical_data['url'])
         
         # Get artwork info for today
         artwork_info = data_service.get_artwork_info(today_date)
@@ -102,6 +113,7 @@ def today():
         return render_template('date.html', 
                              data=liturgical_data, 
                              wikipedia_summary=wikipedia_summary,
+                             reflection=reflection,
                              date=today_date,
                              artwork_info=artwork_info,
                              next_artwork=next_artwork_info)
@@ -117,9 +129,16 @@ def date_page(date_str):
         parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
         liturgical_data = data_service.get_liturgical_data(parsed_date)
         wikipedia_summary = None
+        reflection = None
         
-        if liturgical_data.get('url'):
-            wikipedia_summary = wikipedia_service.get_summary(liturgical_data['url'])
+        # Try to get reflection first
+        try:
+            reflection = data_service.get_reflection(parsed_date)
+        except Exception as e:
+            log(f"[web_server.py] Could not generate reflection: {e}")
+            # Fall back to Wikipedia summary if reflection fails
+            if liturgical_data.get('url'):
+                wikipedia_summary = wikipedia_service.get_summary(liturgical_data['url'])
         
         # Get artwork info for this date
         artwork_info = data_service.get_artwork_info(parsed_date)
@@ -132,6 +151,7 @@ def date_page(date_str):
         return render_template('date.html', 
                              data=liturgical_data, 
                              wikipedia_summary=wikipedia_summary,
+                             reflection=reflection,
                              date=parsed_date,
                              artwork_info=artwork_info,
                              next_artwork=next_artwork_info)
@@ -271,6 +291,43 @@ def api_date_next_artwork(date_str):
         abort(400, description="Invalid date format. Use YYYY-MM-DD")
     except Exception as e:
         logger.error(f"Error serving next artwork for {date_str}: {e}")
+        abort(500)
+
+@app.route('/api/reflection/today')
+def api_today_reflection():
+    """API endpoint for today's liturgical reflection."""
+    try:
+        today_date = date.today()
+        reflection = data_service.get_reflection(today_date)
+        return jsonify(reflection)
+    except Exception as e:
+        logger.error(f"Error getting today's reflection: {e}")
+        abort(500)
+
+@app.route('/api/reflection/<date_str>')
+def api_date_reflection(date_str):
+    """API endpoint for liturgical reflection for a specific date."""
+    try:
+        parsed_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        reflection = data_service.get_reflection(parsed_date)
+        return jsonify(reflection)
+    except ValueError:
+        abort(400, description="Invalid date format. Use YYYY-MM-DD")
+    except Exception as e:
+        logger.error(f"Error getting reflection for {date_str}: {e}")
+        abort(500)
+
+@app.route('/api/tokens')
+def api_token_usage():
+    """API endpoint for token usage statistics."""
+    try:
+        tokens_used = data_service.get_token_usage()
+        return jsonify({
+            'tokens_used': tokens_used,
+            'estimated_cost_usd': round(tokens_used * 0.00015 / 1000, 4)  # Rough estimate for gpt-4o-mini
+        })
+    except Exception as e:
+        logger.error(f"Error getting token usage: {e}")
         abort(500)
 
 @app.errorhandler(400)

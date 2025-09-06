@@ -228,10 +228,10 @@ else
     print_status "WARN" "epdraw tool not found in bin/ (will be built on first run)"
 fi
 
-# 7. Check if config.yaml exists
+# 7. Check if config.yml exists
 echo "7. Checking configuration..."
-if [ -f "config.yaml" ]; then
-    print_status "PASS" "config.yaml exists"
+if [ -f "config.yml" ]; then
+    print_status "PASS" "config.yml exists"
     
     # Validate config structure
     if source venv/bin/activate 2>/dev/null && python3 -c "
@@ -239,11 +239,11 @@ import yaml
 import sys
 
 try:
-    with open('config.yaml') as f:
+    with open('config.yml') as f:
         config = yaml.safe_load(f)
     
     if not config:
-        print('ERROR: config.yaml is empty')
+        print('ERROR: config.yml is empty')
         exit(1)
     
     required_keys = ['output_image', 'vcom', 'shutdown_after_display', 'log_file']
@@ -257,6 +257,13 @@ try:
     if config.get('vcom', 0) <= 0:
         print('WARNING: vcom should be a positive number')
     
+    # Check for OpenAI API key
+    openai_key = config.get('openai_api_key', '')
+    if not openai_key or openai_key == 'your-openai-api-key-here':
+        print('WARNING: OpenAI API key not configured - reflection generation will not work')
+    else:
+        print('OpenAI API key is configured')
+    
     print('Config structure is valid')
     
 except yaml.YAMLError as e:
@@ -266,15 +273,15 @@ except Exception as e:
     print('ERROR: Failed to read config:', e)
     exit(1)
 " 2>/dev/null; then
-        print_status "PASS" "config.yaml structure is valid"
+        print_status "PASS" "config.yml structure is valid"
     else
-        print_status "WARN" "config.yaml may be missing required keys or have invalid format"
+        print_status "WARN" "config.yml may be missing required keys or have invalid format"
         if [ "$VERBOSE" = "true" ]; then
             echo "  Required keys: output_image, vcom, shutdown_after_display, log_file"
         fi
     fi
 else
-    print_status "FAIL" "config.yaml not found"
+    print_status "FAIL" "config.yml not found"
     OVERALL_STATUS="FAIL"
 fi
 
@@ -418,6 +425,33 @@ else
     print_status "INFO" "Web server configuration file not found (will be created by setup.sh)"
 fi
 
+# 18. Test reflection generation dependencies
+echo "18. Testing reflection generation dependencies..."
+if source venv/bin/activate 2>/dev/null && python3 -c "import openai; print('OpenAI package available')" 2>/dev/null; then
+    print_status "PASS" "OpenAI package is installed"
+else
+    print_status "FAIL" "OpenAI package not found. Run 'pip install -r requirements.txt'"
+    OVERALL_STATUS="FAIL"
+fi
+
+# 19. Test reflection service import
+echo "19. Testing reflection service import..."
+if source venv/bin/activate 2>/dev/null && python3 -c "import liturgical_display.services.reflection_service; print('Reflection service imports successfully')" 2>/dev/null; then
+    print_status "PASS" "Reflection service imports successfully"
+else
+    print_status "FAIL" "Cannot import reflection service"
+    OVERALL_STATUS="FAIL"
+fi
+
+# 20. Test Scriptura service import
+echo "20. Testing Scriptura service import..."
+if source venv/bin/activate 2>/dev/null && python3 -c "import liturgical_display.services.scriptura_service; print('Scriptura service imports successfully')" 2>/dev/null; then
+    print_status "PASS" "Scriptura service imports successfully"
+else
+    print_status "FAIL" "Cannot import Scriptura service"
+    OVERALL_STATUS="FAIL"
+fi
+
 echo ""
 echo "================================================"
 echo "🎯 Validation Summary:"
@@ -452,10 +486,12 @@ else
     echo "✅ Your liturgical_display installation is ready!"
     echo ""
     echo "Next steps:"
-    echo "1. Edit config.yaml to match your environment"
-    echo "2. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
-    echo "3. (Optional) Run integration test: ./tests/test_integration.sh"
-    echo "4. (Optional) Enable systemd service for daily runs"
+    echo "1. Edit config.yml to match your environment"
+    echo "2. Add your OpenAI API key to config.yml for reflection generation"
+    echo "3. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
+    echo "4. Test reflection generation: source venv/bin/activate && python tests/test_reflection.py"
+    echo "5. (Optional) Run integration test: ./tests/test_integration.sh"
+    echo "6. (Optional) Enable systemd service for daily runs"
     echo ""
     echo "For troubleshooting, see README.md and PLAN.md"
     exit 0

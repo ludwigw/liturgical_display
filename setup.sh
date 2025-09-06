@@ -81,9 +81,16 @@ fi
 echo "Setup complete! Virtual environment is ready."
 echo ""
 echo "Next steps:"
-echo "1. Edit config.yaml to match your environment"
-echo "2. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
-echo "3. (Optional) Enable systemd service for daily runs"
+echo "1. Edit config.yml to match your environment"
+if [ "$USER_OPENAI_KEY" = "your-openai-api-key-here" ]; then
+    echo "2. Add your OpenAI API key to config.yml for reflection generation"
+    echo "3. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
+    echo "4. (Optional) Enable systemd service for daily runs"
+else
+    echo "2. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
+    echo "3. Test reflection generation: source venv/bin/activate && python tests/test_reflection.py"
+    echo "4. (Optional) Enable systemd service for daily runs"
+fi
 
 echo ""
 echo "🔍 Running installation validation..."
@@ -117,22 +124,26 @@ done
 # --- CONFIGURATION SETUP ---
 USER_HOME="$HOME"
 PROJECT_DIR="$(pwd)"  # Get the actual project directory where setup.sh is run from
-CONFIG_FILE="config.yaml"
-BACKUP_FILE="config.yaml.bak"
+BACKUP_FILE="config.yml.bak"
 
-# If config.yaml exists, read current values
-if [ -f "$CONFIG_FILE" ]; then
-    CURRENT_VCOM=$(grep '^vcom:' "$CONFIG_FILE" | awk '{print $2}')
-    echo "Existing config.yaml found."
-    echo "Backing up current config.yaml to $BACKUP_FILE."
-    cp "$CONFIG_FILE" "$BACKUP_FILE"
+# If config.yml exists, read current values
+if [ -f "config.yml" ]; then
+    CURRENT_VCOM=$(grep '^vcom:' "config.yml" | awk '{print $2}')
+    # Extract OpenAI key, handling both quoted and unquoted formats
+    CURRENT_OPENAI_KEY=$(grep '^openai_api_key:' "config.yml" | sed -E 's/^openai_api_key: *"?([^"]*)"?$/\1/' | sed 's/^your-openai-api-key-here$//')
+    echo "Existing config.yml found."
+    echo "Backing up current config.yml to config.yml.bak."
+    cp "config.yml" "config.yml.bak"
 else
     CURRENT_VCOM="-1.18"
+    CURRENT_OPENAI_KEY=""
 fi
 
 if [ $NON_INTERACTIVE -eq 1 ]; then
     # Use env var or default for VCOM
     USER_VCOM="${VCOM:-$CURRENT_VCOM}"
+    # Use env var or current value for OpenAI key
+    USER_OPENAI_KEY="${OPENAI_API_KEY:-$CURRENT_OPENAI_KEY}"
 else
     echo ""
     echo "Please enter the VCOM value for your eInk display (see sticker on FPC cable) [default: $CURRENT_VCOM]:"
@@ -140,28 +151,55 @@ else
     if [ -z "$USER_VCOM" ]; then
         USER_VCOM="$CURRENT_VCOM"
     fi
+    
+    echo ""
+    if [ -n "$CURRENT_OPENAI_KEY" ]; then
+        echo "Please enter your OpenAI API key for reflection generation [current: ${CURRENT_OPENAI_KEY:0:20}...] (or press Enter to keep current):"
+    else
+        echo "Please enter your OpenAI API key for reflection generation (or press Enter to skip):"
+    fi
+    read -r USER_OPENAI_KEY
+    if [ -z "$USER_OPENAI_KEY" ]; then
+        if [ -n "$CURRENT_OPENAI_KEY" ]; then
+            USER_OPENAI_KEY="$CURRENT_OPENAI_KEY"
+            echo "✅ Keeping existing OpenAI API key"
+        else
+            USER_OPENAI_KEY="your-openai-api-key-here"
+            echo "⚠️  OpenAI API key not provided. You can add it later by editing config.yml"
+        fi
+    else
+        echo "✅ OpenAI API key will be configured"
+    fi
 fi
 
 OUTPUT_IMAGE="$PROJECT_DIR/today.png"
 LOG_FILE="$PROJECT_DIR/logs/display.log"
 
-# Write new config.yaml
-echo "Writing config.yaml with detected defaults..."
-cat > "$CONFIG_FILE" <<EOF
-# Where to save the rendered image for today
+# Write new config.yml
+echo "Writing config.yml with detected defaults..."
+cat > "config.yml" <<EOF
+# Main config.yml for liturgical_display
+# Package handles its own caching internally
+
+# Display settings
 output_image: $OUTPUT_IMAGE
-
-# VCOM voltage for your eInk display (see sticker on FPC cable, e.g. -2.51)
 vcom: $USER_VCOM
-
-# If true, Pi will shut down after updating the display (for use with timed power/RTC)
 shutdown_after_display: false
-
-# Path to log file
 log_file: $LOG_FILE
+
+# Web server configuration
+web_server:
+  enabled: true
+  host: "0.0.0.0"
+  port: 8080
+  debug: false
+
+# API Keys for reflection generation
+openai_api_key: "$USER_OPENAI_KEY"
+# Note: Scriptura API is free and doesn't require an API key
 EOF
 
-echo "config.yaml written. You can edit this file to further customize your setup."
+echo "config.yml written. You can edit this file to further customize your setup."
 
 # --- SYSTEMD SETUP ---
 # Skip systemd setup in CI environments

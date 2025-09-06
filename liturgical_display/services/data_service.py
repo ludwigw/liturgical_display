@@ -15,13 +15,15 @@ from typing import Dict, Any, Optional
 
 from liturgical_calendar.liturgical import liturgical_calendar
 from ..utils import log
+from .reflection_service import ReflectionService
+from .scriptura_service import ScripturaService
 
 logger = logging.getLogger(__name__)
 
 class DataService:
     """Service for accessing liturgical data and generating images."""
     
-    def __init__(self, cache_dir: Optional[str] = None):
+    def __init__(self, cache_dir: Optional[str] = None, config: Optional[Dict[str, Any]] = None):
         """Initialize the data service."""
         # Use liturgical-calendar's cache directory structure
         if cache_dir:
@@ -35,6 +37,10 @@ class DataService:
         
         self.images_cache_dir = Path(self.cache_dir) / "images"
         self.images_cache_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Initialize reflection and scriptura services with config
+        self.reflection_service = ReflectionService(cache_dir=self.cache_dir, config=config)
+        self.scriptura_service = ScripturaService(config=config)
         
         log(f"[data_service.py] Initialized with cache dir: {self.cache_dir}")
     
@@ -288,4 +294,39 @@ class DataService:
             log(f"[data_service.py] Cleared {len(files)} cached files")
         except Exception as e:
             log(f"[data_service.py] ERROR clearing cache: {e}")
-            logger.error(f"Error clearing cache: {e}") 
+            logger.error(f"Error clearing cache: {e}")
+    
+    def get_reflection(self, target_date: date) -> Dict[str, Any]:
+        """
+        Get or generate a reflection for a specific date.
+        
+        Args:
+            target_date: The date to get reflection for
+            
+        Returns:
+            Dictionary containing reflection data
+        """
+        try:
+            # Get liturgical data first
+            liturgical_data = self.get_liturgical_data(target_date)
+            
+            # Enrich readings with actual text content
+            if 'readings' in liturgical_data:
+                liturgical_data['readings'] = self.scriptura_service.get_reading_contents(
+                    liturgical_data['readings']
+                )
+            
+            # Generate reflection
+            reflection = self.reflection_service.get_reflection(target_date, liturgical_data)
+            
+            return reflection
+            
+        except Exception as e:
+            log(f"[data_service.py] ERROR getting reflection: {e}")
+            logger.error(f"Error getting reflection for {target_date}: {e}")
+            # Return fallback reflection
+            return self.reflection_service._get_fallback_reflection(target_date, {})
+    
+    def get_token_usage(self) -> int:
+        """Get total tokens used by reflection service."""
+        return self.reflection_service.get_token_usage() 
