@@ -227,20 +227,47 @@ class ScripturaService:
                 
                 for i, part in enumerate(non_empty_parts):
                     if i == 0:
-                        # First part - add verse number and content
-                        html_parts.append(f'<span class="verse"><span class="verse-number">{verse_number}</span> {part}</span>')
+                        # First part - add verse number and content with nowrap
+                        wrapped_text = self._wrap_verse_with_nowrap(verse_number, part)
+                        html_parts.append(f'<span class="verse">{wrapped_text}</span>')
                     else:
                         # Subsequent parts - close paragraph and start new one
                         html_parts.append('</p><p class="reading-paragraph">')
-                        html_parts.append(f'<span class="verse"><span class="verse-number">{verse_number}</span> {part}</span>')
+                        wrapped_text = self._wrap_verse_with_nowrap(verse_number, part)
+                        html_parts.append(f'<span class="verse">{wrapped_text}</span>')
             else:
-                # No paragraph markers, just add verse span
-                html_parts.append(f'<span class="verse"><span class="verse-number">{verse_number}</span> {clean_text}</span>')
+                # No paragraph markers, just add verse span with nowrap
+                wrapped_text = self._wrap_verse_with_nowrap(verse_number, clean_text)
+                html_parts.append(f'<span class="verse">{wrapped_text}</span>')
         
         # Close the final paragraph
         html_parts.append('</p>')
         
         return ''.join(html_parts)
+    
+    def _wrap_verse_with_nowrap(self, verse_number: str, text: str) -> str:
+        """
+        Wrap verse number and first two words in a nowrap span.
+        
+        Args:
+            verse_number: The verse number
+            text: The verse text
+            
+        Returns:
+            HTML with nowrap span around verse number and first two words
+        """
+        # Split text into words
+        words = text.split()
+        
+        if len(words) >= 2:
+            # Take first two words for nowrap
+            first_two_words = ' '.join(words[:2])
+            remaining_words = ' '.join(words[2:])
+            
+            return f'<span class="nowrap"><span class="verse-number">{verse_number}</span> {first_two_words}</span> {remaining_words}'
+        else:
+            # If less than 2 words, wrap everything
+            return f'<span class="nowrap"><span class="verse-number">{verse_number}</span> {text}</span>'
     
     def _format_verse_html(self, verse_data: dict) -> str:
         """
