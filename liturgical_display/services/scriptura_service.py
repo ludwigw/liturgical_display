@@ -65,7 +65,7 @@ class ScripturaService:
             reference: Bible reference (e.g., "John 3:16", "Psalm 23:1-6")
             
         Returns:
-            Text content of the reading
+            Text content of the reading with proper paragraph structure
         """
         try:
             # Clean up the reference for the API
@@ -74,6 +74,9 @@ class ScripturaService:
             # Parse reference to get book, chapter, verse range
             book, chapter, verse_range = self._parse_reference(clean_reference)
             
+            # Collect all verse data
+            verses_data = []
+            
             # Handle verse ranges by making multiple API calls
             if '-' in verse_range:
                 start_verse, end_verse = verse_range.split('-', 1)
@@ -81,43 +84,35 @@ class ScripturaService:
                 
                 # Handle "end" as a special case - try verses until we get an error
                 if end_verse.strip().lower() == 'end':
-                    verses = []
                     verse_num = start_verse
                     max_attempts = 50  # Reasonable limit to prevent infinite loops
                     
                     while verse_num <= start_verse + max_attempts:
                         verse_data = self._get_single_verse_data(book, chapter, str(verse_num))
                         if verse_data and not verse_data.get('text', '').startswith("[Reading:"):
-                            verses.append(self._format_verse_html(verse_data))
+                            verses_data.append(verse_data)
                             verse_num += 1
                         else:
                             # No more verses found, stop here
                             break
-                    
-                    if verses:
-                        return " ".join(verses)
-                    else:
-                        return f"[Reading: {reference}]"
                 else:
                     # Regular range
                     end_verse = int(end_verse.strip())
-                verses = []
-                for verse_num in range(start_verse, end_verse + 1):
-                    verse_data = self._get_single_verse_data(book, chapter, str(verse_num))
-                    if verse_data and not verse_data.get('text', '').startswith("[Reading:"):
-                        verses.append(self._format_verse_html(verse_data))
-                
-                if verses:
-                    return " ".join(verses)
-                else:
-                    return f"[Reading: {reference}]"
+                    for verse_num in range(start_verse, end_verse + 1):
+                        verse_data = self._get_single_verse_data(book, chapter, str(verse_num))
+                        if verse_data and not verse_data.get('text', '').startswith("[Reading:"):
+                            verses_data.append(verse_data)
             else:
                 # Single verse
                 verse_data = self._get_single_verse_data(book, chapter, verse_range)
                 if verse_data and not verse_data.get('text', '').startswith("[Reading:"):
-                    return self._format_verse_html(verse_data)
-                else:
-                    return f"[Reading: {reference}]"
+                    verses_data.append(verse_data)
+            
+            # Format all verses into proper paragraph structure
+            if verses_data:
+                return self._format_reading_paragraph(verses_data)
+            else:
+                return f"[Reading: {reference}]"
                 
         except Exception as e:
             log(f"[scriptura_service.py] ERROR getting text for {reference}: {e}")
@@ -160,6 +155,60 @@ class ScripturaService:
             log(f"[scriptura_service.py] ERROR getting verse {book} {chapter}:{verse}: {e}")
             return None
 
+    def _format_reading_paragraph(self, verses: list) -> str:
+        """
+        Format a list of verses into a single paragraph with proper structure.
+        
+        Args:
+            verses: List of verse data dictionaries
+            
+        Returns:
+            Formatted HTML string with one paragraph containing all verses
+        """
+        if not verses:
+            return ""
+        
+        # Start with opening paragraph tag
+        html_parts = ['<p class="reading-paragraph">']
+        
+        for verse_data in verses:
+            if not verse_data:
+                continue
+                
+            verse_number = verse_data.get('verse', '')
+            verse_text = verse_data.get('text', '')
+            
+            if not verse_text:
+                continue
+            
+            # Clean up the text
+            clean_text = verse_text.strip()
+            
+            # Handle paragraph markers (pilcrows) - only KJV has them
+            if '¶' in clean_text:
+                # Split by ¶ and process each part
+                parts = clean_text.split('¶')
+                
+                # Filter out empty parts
+                non_empty_parts = [part.strip() for part in parts if part.strip()]
+                
+                for i, part in enumerate(non_empty_parts):
+                    if i == 0:
+                        # First part - add verse number and content
+                        html_parts.append(f'<span class="verse"><span class="verse-number">{verse_number}</span> {part}</span>')
+                    else:
+                        # Subsequent parts - close paragraph and start new one
+                        html_parts.append('</p><p class="reading-paragraph">')
+                        html_parts.append(f'<span class="verse"><span class="verse-number">{verse_number}</span> {part}</span>')
+            else:
+                # No paragraph markers, just add verse span
+                html_parts.append(f'<span class="verse"><span class="verse-number">{verse_number}</span> {clean_text}</span>')
+        
+        # Close the final paragraph
+        html_parts.append('</p>')
+        
+        return ''.join(html_parts)
+    
     def _format_verse_html(self, verse_data: dict) -> str:
         """
         Format verse data into structured HTML.
