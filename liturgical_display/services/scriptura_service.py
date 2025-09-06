@@ -74,39 +74,44 @@ class ScripturaService:
             # Parse reference to get book, chapter, verse range
             book, chapter, verse_range = self._parse_reference(clean_reference)
             
-            # Collect all verse data
+            # Get the entire chapter in one API call
+            chapter_data = self._get_chapter_data(book, chapter)
+            if not chapter_data:
+                return f"[Reading: {reference}]"
+            
+            # Extract the specific verses we need
             verses_data = []
             
-            # Handle verse ranges by making multiple API calls
             if '-' in verse_range:
                 start_verse, end_verse = verse_range.split('-', 1)
                 start_verse = int(start_verse.strip())
                 
-                # Handle "end" as a special case - try verses until we get an error
                 if end_verse.strip().lower() == 'end':
-                    verse_num = start_verse
-                    max_attempts = 50  # Reasonable limit to prevent infinite loops
-                    
-                    while verse_num <= start_verse + max_attempts:
-                        verse_data = self._get_single_verse_data(book, chapter, str(verse_num))
-                        if verse_data and not verse_data.get('text', '').startswith("[Reading:"):
-                            verses_data.append(verse_data)
-                            verse_num += 1
-                        else:
-                            # No more verses found, stop here
-                            break
+                    # Find the last verse in the chapter
+                    verse_numbers = [int(v) for v in chapter_data['verses'].keys() if v.isdigit()]
+                    if verse_numbers:
+                        end_verse = max(verse_numbers)
+                    else:
+                        end_verse = start_verse
                 else:
-                    # Regular range
                     end_verse = int(end_verse.strip())
-                    for verse_num in range(start_verse, end_verse + 1):
-                        verse_data = self._get_single_verse_data(book, chapter, str(verse_num))
-                        if verse_data and not verse_data.get('text', '').startswith("[Reading:"):
-                            verses_data.append(verse_data)
+                
+                # Extract verses from the chapter data
+                for verse_num in range(start_verse, end_verse + 1):
+                    verse_text = chapter_data['verses'].get(str(verse_num))
+                    if verse_text:
+                        verses_data.append({
+                            'verse': str(verse_num),
+                            'text': verse_text
+                        })
             else:
                 # Single verse
-                verse_data = self._get_single_verse_data(book, chapter, verse_range)
-                if verse_data and not verse_data.get('text', '').startswith("[Reading:"):
-                    verses_data.append(verse_data)
+                verse_text = chapter_data['verses'].get(verse_range)
+                if verse_text:
+                    verses_data.append({
+                        'verse': verse_range,
+                        'text': verse_text
+                    })
             
             # Format all verses into proper paragraph structure
             if verses_data:
@@ -117,6 +122,34 @@ class ScripturaService:
         except Exception as e:
             log(f"[scriptura_service.py] ERROR getting text for {reference}: {e}")
             return f"[Reading: {reference}]"
+    
+    def _get_chapter_data(self, book: str, chapter: str) -> dict:
+        """
+        Get an entire chapter from the Scriptura API.
+        
+        Args:
+            book: Book name (e.g., "John")
+            chapter: Chapter number (e.g., "3")
+            
+        Returns:
+            Dictionary with chapter data including all verses
+        """
+        try:
+            url = f"{self.base_url}/api/chapter"
+            params = {
+                'book': book,
+                'chapter': chapter,
+                'version': self.version
+            }
+            
+            response = requests.get(url, params=params, timeout=10)
+            response.raise_for_status()
+            
+            return response.json()
+            
+        except Exception as e:
+            logger.error(f"Error fetching chapter {book} {chapter} (version {self.version}): {e}")
+            return {}
     
     def _get_single_verse_data(self, book: str, chapter: str, verse: str) -> dict:
         """
