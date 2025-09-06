@@ -12,7 +12,6 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Dict, Any, Optional
 import openai
-import smartypants
 from ..utils import log
 
 logger = logging.getLogger(__name__)
@@ -151,8 +150,7 @@ class ReflectionService:
                 reflection_text = response_content
                 prayer_text = ''
             
-            # Don't apply smartypants here - it will be applied in the template
-            # to avoid double-encoding issues
+            # Text will be rendered as-is in the template
             
             # Build response
             reflection = {
@@ -243,8 +241,7 @@ Example:
             reflection_text = f"In {season}, we continue our journey of faith. May God's grace guide us through this day."
             prayer_text = "Lord, guide us through this season of faith.\nMay your grace be our strength and your love our guide. Amen."
         
-        # Don't apply smartypants here - it will be applied in the template
-        # to avoid double-encoding issues
+        # Text will be rendered as-is in the template
         
         return {
             "date": target_date.strftime("%Y-%m-%d"),
