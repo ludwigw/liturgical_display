@@ -55,6 +55,14 @@ fi
 echo "🔧 Running $MODULE module..."
 
 # Run the specified module
-"$SCRIPT_DIR/setup_$MODULE.sh" --force-rebuild="$FORCE_REBUILD" --non-interactive="$NON_INTERACTIVE"
+ARGS=""
+if [ "$FORCE_REBUILD" = "true" ]; then
+    ARGS="$ARGS --force-rebuild"
+fi
+if [ "$NON_INTERACTIVE" = "true" ]; then
+    ARGS="$ARGS --non-interactive"
+fi
+
+"$SCRIPT_DIR/setup_$MODULE.sh" $ARGS
 
 echo "🎉 Module $MODULE completed successfully!"
