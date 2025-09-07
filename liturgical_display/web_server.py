@@ -52,6 +52,11 @@ def create_app(config=None):
     # Initialize data service with config
     global data_service
     try:
+        # Debug: Print config to see what's being passed
+        print(f"DEBUG: Config being passed to DataService:")
+        print(f"  scriptura section: {config.get('scriptura', 'NOT FOUND')}")
+        print(f"  use_local: {config.get('scriptura', {}).get('use_local', 'NOT FOUND')}")
+        
         data_service = DataService(config=config)
     except ValueError as e:
         if "Scriptura API not configured" in str(e):
