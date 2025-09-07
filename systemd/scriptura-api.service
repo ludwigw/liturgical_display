@@ -23,10 +23,10 @@ ProtectHome=false
 ReadWritePaths={{PROJECT_DIR}}/scriptura-api
 
 # Minimal resource limits - let system handle thread limits
-MemoryLimit=256M
+MemoryLimit=64M
 MemoryAccounting=true
-MemoryHigh=200M
-MemoryMax=256M
+MemoryHigh=48M
+MemoryMax=64M
 
 [Install]
 WantedBy=multi-user.target
