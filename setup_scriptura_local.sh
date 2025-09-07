@@ -39,10 +39,25 @@ else
     git remote add upstream https://github.com/AlexLamper/ScripturaAPI.git
 fi
 
+# Ensure we're in the scriptura-api directory
+echo "📍 Current directory: $(pwd)"
+echo "📁 Contents: $(ls -la)"
+
 # Create virtual environment for Scriptura
 if [ ! -d "venv" ]; then
     echo "🐍 Creating virtual environment for Scriptura..."
     python3 -m venv venv
+    echo "✅ Virtual environment created"
+else
+    echo "✅ Virtual environment already exists"
+fi
+
+# Ensure virtual environment is properly created
+if [ ! -f "venv/bin/activate" ]; then
+    echo "❌ Virtual environment creation failed!"
+    echo "📁 Current directory contents: $(ls -la)"
+    echo "📁 venv directory contents: $(ls -la venv/ 2>/dev/null || echo 'venv directory not found')"
+    exit 1
 fi
 
 # Activate virtual environment and install dependencies
