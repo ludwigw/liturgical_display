@@ -28,8 +28,8 @@ class ScripturaService:
             self.base_url = f"http://localhost:{local_port}"
             log(f"[scriptura_service.py] Using LOCAL Scriptura API at: {self.base_url}")
         else:
-            self.base_url = base_url.rstrip('/')
-            log(f"[scriptura_service.py] Using REMOTE Scriptura API at: {self.base_url}")
+            # No remote fallback - fail clearly if local is not configured
+            raise ValueError("Scriptura API not configured for local use. Set scriptura.use_local: true in config.yml")
         
         # Use version from config if available, otherwise use parameter
         if config and config.get('scriptura', {}).get('version'):

@@ -51,7 +51,16 @@ def create_app(config=None):
     
     # Initialize data service with config
     global data_service
-    data_service = DataService(config=config)
+    try:
+        data_service = DataService(config=config)
+    except ValueError as e:
+        if "Scriptura API not configured" in str(e):
+            print(f"ERROR: {e}")
+            print("Please ensure scriptura.use_local: true is set in config.yml")
+            print("And that the local Scriptura API is running on port 8081")
+            raise
+        else:
+            raise
     
     # Add context processor for current time and data service
     @app.context_processor
