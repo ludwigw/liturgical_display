@@ -9,7 +9,7 @@ User={{USER}}
 Group={{USER}}
 WorkingDirectory={{PROJECT_DIR}}/scriptura-api
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/bin/bash -c "source venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8081"
+ExecStart=/bin/bash -c "cd {{PROJECT_DIR}}/scriptura-api && source venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8081"
 Restart=always
 RestartSec=10
 StandardOutput=journal

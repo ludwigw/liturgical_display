@@ -280,12 +280,27 @@ else
         # Install Scriptura API service if local Scriptura was installed
         if [ -d "scriptura-api" ]; then
             echo "Installing Scriptura API systemd service..."
+            
+            # Fix ownership and permissions first
+            echo "Setting proper ownership and permissions for Scriptura API..."
+            sudo chown -R $CURRENT_USER:$CURRENT_USER $PROJECT_DIR/scriptura-api/
+            chmod -R 755 $PROJECT_DIR/scriptura-api/
+            
+            # Create and install service file
             sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/scriptura-api.service | sed "s|{{USER}}|$CURRENT_USER|g" > /tmp/scriptura-api.service
             sudo cp /tmp/scriptura-api.service /etc/systemd/system/scriptura-api.service
             sudo systemctl daemon-reload
             sudo systemctl enable scriptura-api.service
             sudo systemctl start scriptura-api.service
-            echo "Scriptura API service installed and started on port 8081"
+            
+            # Wait a moment and check if it started successfully
+            sleep 3
+            if systemctl is-active --quiet scriptura-api.service; then
+                echo "✅ Scriptura API service installed and started on port 8081"
+            else
+                echo "⚠️  Scriptura API service installed but may not be running properly"
+                echo "   Check logs with: sudo journalctl -u scriptura-api.service -f"
+            fi
         fi
         
         sudo systemctl daemon-reload
