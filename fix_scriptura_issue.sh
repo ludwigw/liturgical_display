@@ -161,20 +161,41 @@ else
     netstat -tlnp | grep ":8081" || echo "Port 8081 not in use"
 fi
 
-# 7. Check config.yml
+# 7. Check and fix config.yml
 echo ""
-echo "7. Checking config.yml..."
+echo "7. Checking and fixing config.yml..."
 if [ -f "config.yml" ]; then
-    if grep -q "use_local: true" config.yml; then
-        print_status "PASS" "Config set to use local Scriptura"
+    if grep -q "scriptura:" config.yml; then
+        print_status "PASS" "Scriptura configuration found in config.yml"
+        
+        if grep -q "use_local: true" config.yml; then
+            print_status "PASS" "Config set to use local Scriptura"
+        else
+            print_status "WARN" "Config not set to use local Scriptura - updating..."
+            sed -i.bak 's/use_local: false/use_local: true/' config.yml
+            print_status "PASS" "Config updated to use local Scriptura"
+        fi
     else
-        print_status "WARN" "Config not set to use local Scriptura - updating..."
-        sed -i.bak 's/use_local: false/use_local: true/' config.yml
-        print_status "PASS" "Config updated to use local Scriptura"
+        print_status "FAIL" "No Scriptura configuration found - adding it..."
+        
+        # Add Scriptura configuration to config.yml
+        cat >> config.yml << 'EOF'
+
+# Scriptura API configuration
+scriptura:
+  use_local: true   # Set to true to use local Scriptura instance
+  local_port: 8081  # Port for local Scriptura API
+  version: "asv"    # Default Bible version
+EOF
+        print_status "PASS" "Scriptura configuration added to config.yml"
     fi
 else
     print_status "FAIL" "config.yml not found"
 fi
+
+# Show the Scriptura section of config.yml
+echo "Scriptura configuration in config.yml:"
+grep -A 4 "scriptura:" config.yml || echo "No Scriptura section found"
 
 # 8. Final status check
 echo ""

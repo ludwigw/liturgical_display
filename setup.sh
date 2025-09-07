@@ -224,8 +224,23 @@ if [ -z "$INSTALL_SCRIPTURA" ] || [ "$INSTALL_SCRIPTURA" = "Y" ] || [ "$INSTALL_
         
         # Update config.yml to use local Scriptura
         echo "Updating config.yml to use local Scriptura API..."
-        sed -i.bak 's/use_local: false/use_local: true/' config.yml
-        rm -f config.yml.bak
+        
+        # Check if Scriptura config exists, if not add it
+        if ! grep -q "scriptura:" config.yml; then
+            echo "Adding Scriptura configuration to config.yml..."
+            cat >> config.yml << 'EOF'
+
+# Scriptura API configuration
+scriptura:
+  use_local: true   # Set to true to use local Scriptura instance
+  local_port: 8081  # Port for local Scriptura API
+  version: "asv"    # Default Bible version
+EOF
+        else
+            # Update existing config
+            sed -i.bak 's/use_local: false/use_local: true/' config.yml
+            rm -f config.yml.bak
+        fi
         
         echo "✅ Local Scriptura API installed and configured!"
         echo "   - API will run on port 8081"

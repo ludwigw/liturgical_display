@@ -159,16 +159,21 @@ echo "7. Checking config.yml..."
 if [ -f "config.yml" ]; then
     print_status "PASS" "config.yml exists"
     
-    if grep -q "use_local: true" config.yml; then
-        print_status "PASS" "Config set to use local Scriptura"
-    else
-        print_status "WARN" "Config not set to use local Scriptura"
-    fi
-    
     if grep -q "scriptura:" config.yml; then
         print_status "PASS" "Scriptura configuration found"
+        
+        if grep -q "use_local: true" config.yml; then
+            print_status "PASS" "Config set to use local Scriptura"
+        else
+            print_status "WARN" "Config not set to use local Scriptura"
+        fi
+        
+        # Show the Scriptura section
+        echo "Scriptura configuration:"
+        grep -A 4 "scriptura:" config.yml
     else
-        print_status "FAIL" "No Scriptura configuration found"
+        print_status "FAIL" "No Scriptura configuration found - this is why it's using remote API!"
+        echo "   The web server will default to remote Scriptura API without this config"
     fi
 else
     print_status "FAIL" "config.yml does not exist"
