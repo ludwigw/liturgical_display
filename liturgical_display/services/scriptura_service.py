@@ -173,50 +173,75 @@ class ScripturaService:
             parts = reference.split(',')
             all_verses = []
             
+            # Parse the first part to get book and chapter
+            first_part = parts[0].strip()
+            if ':' not in first_part:
+                return f"[Reading: {reference}]"
+            
+            book_chapter, verse_part = first_part.split(':', 1)
+            book_chapter_parts = book_chapter.rsplit(' ', 1)
+            
+            if len(book_chapter_parts) == 2:
+                book = book_chapter_parts[0].strip()
+                chapter = book_chapter_parts[1].strip()
+            else:
+                book = book_chapter
+                chapter = "1"
+            
+            # Normalize book name for API
+            book = self._normalize_book_name(book)
+            
+            # Process all parts (first and subsequent)
             for part in parts:
                 part = part.strip()
+                
                 if ':' in part:
                     # Parse each part as a separate reference
                     book_chapter, verse_part = part.split(':', 1)
                     book_chapter_parts = book_chapter.rsplit(' ', 1)
                     
                     if len(book_chapter_parts) == 2:
-                        book = book_chapter_parts[0].strip()
-                        chapter = book_chapter_parts[1].strip()
+                        part_book = book_chapter_parts[0].strip()
+                        part_chapter = book_chapter_parts[1].strip()
                     else:
-                        book = book_chapter
-                        chapter = "1"
+                        part_book = book_chapter
+                        part_chapter = "1"
                     
                     # Normalize book name for API
-                    book = self._normalize_book_name(book)
+                    part_book = self._normalize_book_name(part_book)
+                else:
+                    # Reuse book and chapter from first part
+                    part_book = book
+                    part_chapter = chapter
+                    verse_part = part
+                
+                # Get chapter data
+                chapter_data = self._get_chapter_data(part_book, part_chapter)
+                if not chapter_data:
+                    continue
+                
+                # Parse verse range
+                verse_part = self._clean_verse_suffix(verse_part)
+                if '-' in verse_part:
+                    start_verse, end_verse = verse_part.split('-', 1)
+                    start_verse = int(start_verse.strip())
+                    end_verse = int(end_verse.strip())
                     
-                    # Get chapter data
-                    chapter_data = self._get_chapter_data(book, chapter)
-                    if not chapter_data:
-                        continue
-                    
-                    # Parse verse range
-                    verse_part = self._clean_verse_suffix(verse_part)
-                    if '-' in verse_part:
-                        start_verse, end_verse = verse_part.split('-', 1)
-                        start_verse = int(start_verse.strip())
-                        end_verse = int(end_verse.strip())
-                        
-                        for verse_num in range(start_verse, end_verse + 1):
-                            verse_text = chapter_data['verses'].get(str(verse_num))
-                            if verse_text:
-                                all_verses.append({
-                                    'verse': str(verse_num),
-                                    'text': verse_text
-                                })
-                    else:
-                        # Single verse
-                        verse_text = chapter_data['verses'].get(verse_part)
+                    for verse_num in range(start_verse, end_verse + 1):
+                        verse_text = chapter_data['verses'].get(str(verse_num))
                         if verse_text:
                             all_verses.append({
-                                'verse': verse_part,
+                                'verse': str(verse_num),
                                 'text': verse_text
                             })
+                else:
+                    # Single verse
+                    verse_text = chapter_data['verses'].get(verse_part)
+                    if verse_text:
+                        all_verses.append({
+                            'verse': verse_part,
+                            'text': verse_text
+                        })
             
             if all_verses:
                 return self._format_reading_paragraph(all_verses)
