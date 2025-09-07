@@ -27,7 +27,7 @@ git clone https://github.com/ludwigw/liturgical_display.git && cd liturgical_dis
    ./setup.sh
    ```
    > **Note:** The setup script automatically builds the epdraw tool for real hardware deployment and runs validation to ensure everything is working correctly. For testing in Docker, epdraw is automatically mocked.
-3. **Edit `config.yaml`** to match your environment (paths, VCOM, etc).
+3. **Edit `config.yml`** to match your environment (paths, VCOM, etc).
 4. **Test the workflow:**
    ```sh
    source venv/bin/activate && python3 -m liturgical_display.main
@@ -69,9 +69,9 @@ All tests passed!
 
 > **Note:** The old `validate_install.sh` script is still available for manual troubleshooting, but is no longer run directly in CI or the main test runner. All validation is now covered by the integration test.
 
-## Configuration: config.yaml
+## Configuration: config.yml
 
-The `config.yaml` file controls all device-specific and operational settings. Edit this file after running setup to match your environment.
+The `config.yml` file controls all device-specific and operational settings. Edit this file after running setup to match your environment.
 
 | Key                    | What it does                                                      | Example value                                  |
 |------------------------|-------------------------------------------------------------------|------------------------------------------------|
@@ -80,7 +80,7 @@ The `config.yaml` file controls all device-specific and operational settings. Ed
 | `shutdown_after_display` | If true, Pi will shut down after updating the display             | `false`                                        |
 | `log_file`             | Path to log file                                                   | `/home/pi/liturgical-display/logs/display.log` |
 
-### Example config.yaml
+### Example config.yml
 ```yaml
 # Where to save the rendered image for today
 output_image: /home/pi/liturgical-display/today.png
@@ -93,6 +93,18 @@ shutdown_after_display: false
 
 # Path to log file
 log_file: /home/pi/liturgical-display/logs/display.log
+
+# Scriptura API configuration
+scriptura:
+  use_local: true   # Set to true to use local Scriptura instance
+  local_port: 8081  # Port for local Scriptura API
+  version: "asv"    # Default Bible version
+
+# OpenAI API configuration (for reflections)
+openai:
+  api_key: "your-openai-api-key-here"
+  model: "gpt-4o-mini"
+  max_tokens: 300
 ```
 
 ## Web Server
@@ -104,7 +116,16 @@ The liturgical display includes a Flask web server that provides web access to l
 The system uses a clean separation of concerns:
 - **Main service** (`liturgical.service`): Handles daily display updates
 - **Web server service** (`liturgical-web.service`): Runs continuously for web access
+- **Scriptura API service** (`scriptura-api.service`): Local Bible text API (optional)
 - **Timer** (`liturgical.timer`): Triggers the main service daily at 12:01 AM
+
+### Services Overview
+
+- **Display Service**: Updates eInk display with daily liturgical images
+- **Web Server**: Provides web interface and API endpoints
+- **Scriptura Service**: Fetches Bible reading content (local or remote)
+- **Reflection Service**: Generates AI-powered daily reflections
+- **Wikipedia Service**: Enriches feast/saint information
 
 ### Web Interface
 
@@ -120,6 +141,28 @@ Once running, the web server provides:
 - **Original artwork**: `/api/artwork/today`, `/api/artwork/YYYY-MM-DD`
 - **Next artwork**: `/api/next-artwork/today`, `/api/next-artwork/YYYY-MM-DD`
 - **Generated images**: `/api/image/today/png`, `/api/image/YYYY-MM-DD/bmp`
+- **Reading content**: `/api/reading/REFERENCE` (e.g., `/api/reading/John%203:16`)
+- **Reflections**: `/api/reflection/today`, `/api/reflection/YYYY-MM-DD`
+- **Token usage**: `/api/tokens`
+
+### Scriptura API Configuration
+
+The system supports both local and remote Scriptura API for Bible text access:
+
+#### Local Scriptura API (Recommended)
+- **Faster**: No rate limiting, local network access
+- **Reliable**: No dependency on external services
+- **Customizable**: Can be enhanced with custom parsing logic
+
+The setup script automatically installs and configures the local Scriptura API:
+```bash
+./setup.sh  # Prompts to install local Scriptura API
+```
+
+#### Remote Scriptura API (Fallback)
+- **Simple**: No additional setup required
+- **Limited**: Subject to rate limiting
+- **Dependent**: Requires internet connectivity
 
 ### Web Server Configuration
 
