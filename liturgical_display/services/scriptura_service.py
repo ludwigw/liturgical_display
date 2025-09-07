@@ -55,12 +55,34 @@ class ScripturaService:
             
             for reading_ref in readings:
                 if isinstance(reading_ref, str):
-                    # Get text for this reading using enhanced parsing API
-                    text = self._get_reading_text(reading_ref)
-                    enriched_readings.append({
-                        'reference': reading_ref,
-                        'text': text
-                    })
+                    # Check if this reading contains "or" (alternative readings)
+                    if ' or ' in reading_ref:
+                        # Split by "or" and handle each alternative separately
+                        alternatives = [alt.strip() for alt in reading_ref.split(' or ')]
+                        
+                        # Create a special structure for alternative readings
+                        alternative_readings = []
+                        for alt_ref in alternatives:
+                            text = self._get_reading_text(alt_ref)
+                            alternative_readings.append({
+                                'reference': alt_ref,
+                                'text': text
+                            })
+                        
+                        # Return the alternatives as a special structure
+                        enriched_readings.append({
+                            'reference': reading_ref,
+                            'text': None,  # No combined text
+                            'alternatives': alternative_readings,
+                            'is_alternative': True
+                        })
+                    else:
+                        # Regular single reading
+                        text = self._get_reading_text(reading_ref)
+                        enriched_readings.append({
+                            'reference': reading_ref,
+                            'text': text
+                        })
                 else:
                     # Keep as-is if not a string
                     enriched_readings.append(reading_ref)
