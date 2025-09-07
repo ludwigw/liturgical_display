@@ -135,6 +135,74 @@ else
     echo "ImageMagick is already installed."
 fi
 
+# Configure ImageMagick memory limits for low-memory systems (Raspberry Pi)
+echo "Configuring ImageMagick memory limits for low-memory systems..."
+if command -v convert >/dev/null 2>&1; then
+    # Create ImageMagick policy directory if it doesn't exist
+    sudo mkdir -p /etc/ImageMagick-6
+    
+    # Create policy file with strict memory limits for Raspberry Pi
+    sudo tee /etc/ImageMagick-6/policy.xml > /dev/null << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policymap [
+<!ELEMENT policymap (policy)*>
+<!ATTLIST policymap xmlns CDATA #FIXED ''>
+<!ELEMENT policy EMPTY>
+<!ATTLIST policy xmlns CDATA #FIXED '' domain NMTOKEN #REQUIRED
+  name NMTOKEN #IMPLIED pattern CDATA #IMPLIED rights NMTOKEN #IMPLIED
+  stealth NMTOKEN #IMPLIED value CDATA #IMPLIED>
+]>
+<policymap>
+  <policy domain="resource" name="width" value="2KP"/>
+  <policy domain="resource" name="height" value="2KP"/>
+  <policy domain="resource" name="area" value="16MP"/>
+  <policy domain="resource" name="memory" value="64MB"/>
+  <policy domain="resource" name="map" value="128MB"/>
+  <policy domain="resource" name="disk" value="100MB"/>
+  <policy domain="resource" name="file" value="100"/>
+  <policy domain="resource" name="thread" value="1"/>
+  <policy domain="resource" name="throttle" value="0"/>
+  <policy domain="resource" name="time" value="60"/>
+</policymap>
+EOF
+    
+    echo "✅ ImageMagick memory limits configured for low-memory systems"
+    echo "   - Memory limit: 64MB"
+    echo "   - Map limit: 128MB" 
+    echo "   - Thread limit: 1"
+    echo "   - This prevents OOM kills on Raspberry Pi"
+else
+    echo "⚠️  ImageMagick not available, skipping memory limit configuration"
+fi
+
+# Configure additional swap space for low-memory systems
+echo "Configuring additional swap space for low-memory systems..."
+if command -v apt-get >/dev/null 2>&1; then
+    # Check current swap usage
+    CURRENT_SWAP=$(free | grep Swap | awk '{print $3}')
+    if [ "$CURRENT_SWAP" -gt 400000 ]; then
+        echo "⚠️  High swap usage detected (${CURRENT_SWAP}KB), creating additional swap..."
+        
+        # Create additional 1GB swap file
+        sudo fallocate -l 1G /swapfile2 2>/dev/null || sudo dd if=/dev/zero of=/swapfile2 bs=1M count=1024
+        sudo chmod 600 /swapfile2
+        sudo mkswap /swapfile2
+        sudo swapon /swapfile2
+        
+        # Make it permanent
+        if ! grep -q "/swapfile2" /etc/fstab; then
+            echo '/swapfile2 none swap sw 0 0' | sudo tee -a /etc/fstab
+        fi
+        
+        echo "✅ Additional 1GB swap space created and activated"
+        echo "   - This helps prevent OOM kills during image processing"
+    else
+        echo "✅ Swap usage is reasonable (${CURRENT_SWAP}KB), no additional swap needed"
+    fi
+else
+    echo "⚠️  Not on a system with apt-get, skipping swap configuration"
+fi
+
 echo "✅ Python environment setup complete"
 
 # --- RUN SETUP MODULES ---
