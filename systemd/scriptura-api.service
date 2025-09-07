@@ -28,7 +28,7 @@ MemoryAccounting=true
 MemoryHigh=96M
 MemoryMax=128M
 LimitNOFILE=1024
-LimitNPROC=50
+LimitNPROC=200
 
 # Additional resource constraints
 LimitAS=128M
