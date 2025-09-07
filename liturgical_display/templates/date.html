@@ -53,12 +53,20 @@
                 <li class="alternative-reading">
                     <span class="reading-label">Reading:</span>
                     {% for alt in reading.alternatives %}
+                        {% if alt.text and not alt.text.startswith('[Reading:') %}
                         <a href="#" class="reading-link" data-reading="{{ alt.reference }}">{{ alt.reference }}</a>
+                        {% else %}
+                        <span class="reading-failed">{{ alt.reference }}</span>
+                        {% endif %}
                         {% if not loop.last %}<span class="or-separator"> or </span>{% endif %}
                     {% endfor %}
                 </li>
                 {% else %}
-                <li><a href="#" class="reading-link" data-reading="{{ reading }}">{{ reading }}</a></li>
+                    {% if reading.text and not reading.text.startswith('[Reading:') %}
+                    <li><a href="#" class="reading-link" data-reading="{{ reading }}">{{ reading }}</a></li>
+                    {% else %}
+                    <li><span class="reading-failed">{{ reading }}</span></li>
+                    {% endif %}
                 {% endif %}
             {% endfor %}
         </ul>
