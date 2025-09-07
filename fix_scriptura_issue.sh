@@ -103,6 +103,13 @@ if [ -f "systemd/scriptura-api.service" ]; then
     echo "Service file contents:"
     cat /tmp/scriptura-api.service
     echo ""
+    
+    # Also check if the service file has the right security settings
+    if grep -q "ProtectHome=false" /tmp/scriptura-api.service; then
+        print_status "PASS" "Service file has correct security settings"
+    else
+        print_status "WARN" "Service file may have restrictive security settings"
+    fi
 else
     print_status "FAIL" "Service template not found"
     exit 1

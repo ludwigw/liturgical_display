@@ -111,6 +111,13 @@ if [ -f "/etc/systemd/system/scriptura-api.service" ]; then
     else
         print_status "FAIL" "Service file has wrong user"
     fi
+    
+    # Check security settings
+    if grep -q "ProtectHome=false" /etc/systemd/system/scriptura-api.service; then
+        print_status "PASS" "Service file has correct security settings (ProtectHome=false)"
+    else
+        print_status "FAIL" "Service file has restrictive security settings that may prevent access to home directory"
+    fi
 else
     print_status "FAIL" "Service file does not exist"
 fi
