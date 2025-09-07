@@ -223,7 +223,9 @@ Example:
             message_parts.append("Readings:")
             for i, reading_data in enumerate(inputs['readings'], 1):
                 if isinstance(reading_data, dict) and 'text' in reading_data:
-                    message_parts.append(f"- Reading {i}: {reading_data['text']}")
+                    # Strip HTML tags for LLM consumption
+                    text = self._strip_html_tags(reading_data['text'])
+                    message_parts.append(f"- Reading {i}: {text}")
                 elif isinstance(reading_data, str):
                     message_parts.append(f"- Reading {i}: {reading_data}")
         
@@ -257,3 +259,12 @@ Example:
     def get_token_usage(self) -> int:
         """Get total tokens used in this session."""
         return self.tokens_used
+    
+    def _strip_html_tags(self, html_text: str) -> str:
+        """Strip HTML tags from text for LLM consumption."""
+        import re
+        # Remove HTML tags but preserve text content
+        clean_text = re.sub(r'<[^>]+>', '', html_text)
+        # Clean up extra whitespace
+        clean_text = re.sub(r'\s+', ' ', clean_text).strip()
+        return clean_text
