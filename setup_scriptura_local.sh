@@ -15,6 +15,13 @@ echo "🚀 Setting up Scriptura API locally..."
 if [ -d "$SCRIPTURA_DIR" ]; then
     echo "📁 Scriptura directory already exists, updating..."
     cd "$SCRIPTURA_DIR"
+    
+    # Ensure we're pointing to the correct fork
+    echo "🔄 Updating remote URL to enhanced fork..."
+    git remote set-url origin "$SCRIPTURA_REPO"
+    git remote add upstream https://github.com/AlexLamper/ScripturaAPI.git 2>/dev/null || true
+    
+    # Fetch and checkout the enhanced parsing branch
     git fetch origin
     git checkout feature/enhanced-parsing
     git pull origin feature/enhanced-parsing
@@ -23,6 +30,7 @@ else
     git clone "$SCRIPTURA_REPO" "$SCRIPTURA_DIR"
     cd "$SCRIPTURA_DIR"
     git checkout feature/enhanced-parsing
+    git remote add upstream https://github.com/AlexLamper/ScripturaAPI.git
 fi
 
 # Create virtual environment for Scriptura
