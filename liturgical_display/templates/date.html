@@ -138,6 +138,53 @@ const modalTitle = document.getElementById('modalTitle');
 const modalContent = document.getElementById('modalContent');
 const closeBtn = document.getElementsByClassName('close')[0];
 
+// Format plain text reading into HTML with verse structure
+function formatReadingText(plainText) {
+    if (!plainText || plainText.startsWith('[Reading:')) {
+        return plainText;
+    }
+    
+    // Split by verse numbers (digits followed by space)
+    const parts = plainText.split(/(\d+ )/);
+    
+    if (parts.length < 2) {
+        return plainText;
+    }
+    
+    const formattedParts = [];
+    for (let i = 0; i < parts.length; i++) {
+        if (i + 1 < parts.length && /^\d+ $/.test(parts[i])) {
+            // This is a verse number
+            const verseNum = parts[i].trim();
+            const verseText = parts[i + 1] || "";
+            
+            // Split verse text into words
+            const words = verseText.split(' ');
+            if (words.length >= 2) {
+                const firstTwoWords = words.slice(0, 2).join(' ');
+                const remainingWords = words.slice(2).join(' ');
+                const remainingText = remainingWords ? ` ${remainingWords}` : '';
+                
+                formattedParts.push(
+                    `<span class="verse"><span class="nowrap"><span class="verse-number">${verseNum}</span> ${firstTwoWords}</span>${remainingText}</span>`
+                );
+            } else {
+                formattedParts.push(
+                    `<span class="verse"><span class="nowrap"><span class="verse-number">${verseNum}</span> ${verseText}</span></span>`
+                );
+            }
+            i++; // Skip the next part as we've processed it
+        } else if (parts[i].trim()) {
+            // Regular text
+            formattedParts.push(parts[i]);
+        }
+    }
+    
+    // Join with spaces and wrap in paragraph
+    const formattedText = formattedParts.join(' ');
+    return `<p>${formattedText}</p>`;
+}
+
 // Open modal when reading link is clicked
 document.querySelectorAll('.reading-link').forEach(link => {
     link.addEventListener('click', function(e) {
@@ -152,7 +199,8 @@ document.querySelectorAll('.reading-link').forEach(link => {
             .then(response => response.json())
             .then(data => {
                 if (data.text) {
-                    modalContent.innerHTML = `<div class="reading-text">${data.text}</div>`;
+                    const formattedText = formatReadingText(data.text);
+                    modalContent.innerHTML = `<div class="reading-text">${formattedText}</div>`;
                 } else {
                     modalContent.innerHTML = '<div class="error">Reading content not available</div>';
                 }
