@@ -213,11 +213,11 @@ class ScripturaService:
                     first_two_words = f"{words[0]} {words[1]}"
                     remaining_text = " ".join(words[2:]) if len(words) > 2 else ""
                     if remaining_text:
-                        formatted_verse = f'<span class="verse"><span class="verse-number">{verse_num}</span> <span class="nowrap">{first_two_words}</span> {remaining_text}</span>'
+                        formatted_verse = f'<span class="verse"><span class="nowrap"><span class="verse-number">{verse_num}</span> {first_two_words}</span> {remaining_text}</span>'
                     else:
-                        formatted_verse = f'<span class="verse"><span class="verse-number">{verse_num}</span> <span class="nowrap">{first_two_words}</span></span>'
+                        formatted_verse = f'<span class="verse"><span class="nowrap"><span class="verse-number">{verse_num}</span> {first_two_words}</span></span>'
                 else:
-                    formatted_verse = f'<span class="verse"><span class="verse-number">{verse_num}</span> {verse_text}</span>'
+                    formatted_verse = f'<span class="verse"><span class="nowrap"><span class="verse-number">{verse_num}</span> {verse_text}</span></span>'
                 
                 formatted_parts.append(formatted_verse)
                 i += 2
