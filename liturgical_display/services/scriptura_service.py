@@ -63,10 +63,11 @@ class ScripturaService:
                         # Create a special structure for alternative readings
                         alternative_readings = []
                         for alt_ref in alternatives:
-                            text = self._get_reading_text(alt_ref)
+                            text, parsed = self._get_reading_text_with_status(alt_ref)
                             alternative_readings.append({
                                 'reference': alt_ref,
-                                'text': text
+                                'text': text,
+                                'parsed': parsed
                             })
                         
                         # Return the alternatives as a special structure
@@ -78,10 +79,11 @@ class ScripturaService:
                         })
                     else:
                         # Regular single reading
-                        text = self._get_reading_text(reading_ref)
+                        text, parsed = self._get_reading_text_with_status(reading_ref)
                         enriched_readings.append({
                             'reference': reading_ref,
-                            'text': text
+                            'text': text,
+                            'parsed': parsed
                         })
                 else:
                     # Keep as-is if not a string
@@ -94,6 +96,34 @@ class ScripturaService:
             logger.error(f"Error getting reading contents: {e}")
             return readings  # Return original on error
     
+    def _get_reading_text_with_status(self, reference: str) -> tuple[str, bool]:
+        """
+        Get the text content and parsing status for a specific reading reference.
+        
+        Args:
+            reference: Bible reference (e.g., "John 3:16", "Psalm 23:1-6", "Psalm 104:26-36,37")
+            
+        Returns:
+            Tuple of (text_content, was_parsed_successfully)
+        """
+        try:
+            # Use the enhanced parsing API to handle complex references
+            parse_result = self._parse_reference_with_api(reference)
+            
+            if parse_result and parse_result.get('parsed', False):
+                # Use the formatted text from the parsing API
+                return parse_result.get('formatted_text', f"[Reading: {reference}]"), True
+            else:
+                # Fallback for parsing errors
+                error_msg = parse_result.get('error', 'Unknown parsing error') if parse_result else 'No response from API'
+                log(f"[scriptura_service.py] Parsing failed for '{reference}': {error_msg}")
+                return f"[Reading: {reference}]", False
+                
+        except Exception as e:
+            log(f"[scriptura_service.py] ERROR getting reading text for '{reference}': {e}")
+            logger.error(f"Error getting reading text for '{reference}': {e}")
+            return f"[Reading: {reference}]", False
+
     def _get_reading_text(self, reference: str) -> str:
         """
         Get the text content for a specific reading reference using enhanced parsing.
