@@ -31,7 +31,6 @@ LimitNOFILE=1024
 LimitNPROC=50
 
 # Additional resource constraints
-TasksMax=100
 LimitAS=128M
 LimitRSS=128M
 LimitDATA=128M
