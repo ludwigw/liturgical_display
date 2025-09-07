@@ -52,7 +52,7 @@
                 {% if reading.is_alternative %}
                 <li class="alternative-reading">
                     {% for alt in reading.alternatives %}
-                        {% if alt.text and not alt.text.startswith('[Reading:') %}
+                        {% if alt.text and alt.text|length > 50 %}
                         <a href="#" class="reading-link" data-reading="{{ alt.reference }}">{{ alt.reference }}</a>
                         {% else %}
                         <span class="reading-failed">{{ alt.reference }}</span>
@@ -61,7 +61,7 @@
                     {% endfor %}
                 </li>
                 {% else %}
-                    {% if reading.text and not reading.text.startswith('[Reading:') %}
+                    {% if reading.text and reading.text|length > 50 %}
                     <li><a href="#" class="reading-link" data-reading="{{ reading }}">{{ reading }}</a></li>
                     {% else %}
                     <li><span class="reading-failed">{{ reading }}</span></li>
