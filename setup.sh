@@ -184,10 +184,14 @@ if command -v apt-get >/dev/null 2>&1; then
         echo "⚠️  High swap usage detected (${CURRENT_SWAP}KB), creating additional swap..."
         
         # Create additional 1GB swap file
-        sudo fallocate -l 1G /swapfile2 2>/dev/null || sudo dd if=/dev/zero of=/swapfile2 bs=1M count=1024
-        sudo chmod 600 /swapfile2
-        sudo mkswap /swapfile2
-        sudo swapon /swapfile2
+        if [ -f "/swapfile2" ]; then
+            echo "   - /swapfile2 already exists, skipping creation"
+        else
+            sudo fallocate -l 1G /swapfile2 2>/dev/null || sudo dd if=/dev/zero of=/swapfile2 bs=1M count=1024
+            sudo chmod 600 /swapfile2
+            sudo mkswap /swapfile2
+            sudo swapon /swapfile2
+        fi
         
         # Make it permanent
         if ! grep -q "/swapfile2" /etc/fstab; then
