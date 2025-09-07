@@ -339,6 +339,49 @@ def api_token_usage():
         logger.error(f"Error getting token usage: {e}")
         abort(500)
 
+def format_reading_html(plain_text: str) -> str:
+    """Format plain text reading with HTML structure for display."""
+    if not plain_text or plain_text.startswith('[Reading:'):
+        return plain_text
+    
+    import re
+    # Split by verse numbers (digits followed by space)
+    parts = re.split(r'(\d+ )', plain_text)
+    
+    if len(parts) < 2:
+        return plain_text
+    
+    formatted_parts = []
+    i = 0
+    while i < len(parts):
+        if i + 1 < len(parts) and re.match(r'^\d+ $', parts[i]):
+            # This is a verse number
+            verse_num = parts[i].strip()
+            verse_text = parts[i + 1] if i + 1 < len(parts) else ""
+            
+            # Split verse text into words
+            words = verse_text.split()
+            if len(words) >= 2:
+                first_two_words = f"{words[0]} {words[1]}"
+                remaining_words = " ".join(words[2:]) if len(words) > 2 else ""
+                remaining_text = f" {remaining_words}" if remaining_words else ""
+                
+                formatted_verse = f'<span class="verse"><span class="nowrap"><span class="verse-number">{verse_num}</span> {first_two_words}</span>{remaining_text}</span>'
+            else:
+                formatted_verse = f'<span class="verse"><span class="nowrap"><span class="verse-number">{verse_num}</span> {verse_text}</span></span>'
+            
+            formatted_parts.append(formatted_verse)
+            i += 2
+        else:
+            # Regular text
+            if parts[i].strip():
+                formatted_parts.append(parts[i])
+            i += 1
+    
+    # Join with spaces and wrap in paragraph
+    formatted_text = " ".join(formatted_parts)
+    return f'<p>{formatted_text}</p>'
+
 @app.route('/api/reading/<reading_reference>')
 def api_reading_content(reading_reference):
     """API endpoint for fetching reading content from Scriptura API."""
@@ -350,9 +393,11 @@ def api_reading_content(reading_reference):
         reading_contents = scriptura_service.get_reading_contents([reading_reference])
         
         if reading_contents and len(reading_contents) > 0:
+            plain_text = reading_contents[0].get('text', 'Content not available')
+            formatted_text = format_reading_html(plain_text)
             return jsonify({
                 'reference': reading_reference,
-                'text': reading_contents[0].get('text', 'Content not available')
+                'text': formatted_text
             })
         else:
             return jsonify({
