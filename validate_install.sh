@@ -452,6 +452,72 @@ else
     OVERALL_STATUS="FAIL"
 fi
 
+# 21. Check Scriptura API configuration
+echo "21. Checking Scriptura API configuration..."
+if [ -f "config.yml" ]; then
+    if grep -q "scriptura:" config.yml; then
+        print_status "PASS" "Scriptura configuration found in config.yml"
+        
+        # Check if using local or remote
+        if grep -q "use_local: true" config.yml; then
+            print_status "INFO" "Using local Scriptura API"
+            
+            # Check if local Scriptura is installed
+            if [ -d "scriptura-api" ]; then
+                print_status "PASS" "Local Scriptura API directory exists"
+                
+                # Check if virtual environment exists
+                if [ -d "scriptura-api/venv" ]; then
+                    print_status "PASS" "Scriptura API virtual environment exists"
+                else
+                    print_status "WARN" "Scriptura API virtual environment not found"
+                fi
+                
+                # Check if .env file exists
+                if [ -f "scriptura-api/.env" ]; then
+                    print_status "PASS" "Scriptura API configuration file exists"
+                else
+                    print_status "WARN" "Scriptura API configuration file not found"
+                fi
+            else
+                print_status "WARN" "Local Scriptura API not installed but configured to use local"
+            fi
+        else
+            print_status "INFO" "Using remote Scriptura API"
+        fi
+    else
+        print_status "WARN" "No Scriptura configuration found in config.yml"
+    fi
+else
+    print_status "WARN" "config.yml not found"
+fi
+
+# 22. Test Scriptura API connectivity
+echo "22. Testing Scriptura API connectivity..."
+if source venv/bin/activate 2>/dev/null; then
+    # Test if we can create a ScripturaService instance
+    if python3 -c "
+import yaml
+from liturgical_display.services.scriptura_service import ScripturaService
+try:
+    with open('config.yml', 'r') as f:
+        config = yaml.safe_load(f)
+    service = ScripturaService(config=config)
+    print('ScripturaService created successfully')
+    print(f'Using API: {service.base_url}')
+except Exception as e:
+    print(f'Error: {e}')
+    exit(1)
+" 2>/dev/null; then
+        print_status "PASS" "ScripturaService can be created with current config"
+    else
+        print_status "WARN" "ScripturaService creation failed - check config.yml"
+    fi
+else
+    print_status "FAIL" "Cannot activate virtual environment"
+    OVERALL_STATUS="FAIL"
+fi
+
 echo ""
 echo "================================================"
 echo "🎯 Validation Summary:"

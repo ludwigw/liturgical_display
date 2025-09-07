@@ -1,0 +1,26 @@
+[Unit]
+Description=Scriptura API - Local Bible API Server
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User={{USER}}
+Group={{USER}}
+WorkingDirectory={{PROJECT_DIR}}/scriptura-api
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/bin/bash -c "source venv/bin/activate && uvicorn main:app --host 0.0.0.0 --port 8081"
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths={{PROJECT_DIR}}/scriptura-api
+
+[Install]
+WantedBy=multi-user.target

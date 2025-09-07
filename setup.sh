@@ -201,6 +201,43 @@ EOF
 
 echo "config.yml written. You can edit this file to further customize your setup."
 
+# --- SCRIPTURA API SETUP ---
+echo ""
+echo "Setting up local Scriptura API..."
+
+# Check if we should install Scriptura API
+if [ $NON_INTERACTIVE -eq 1 ]; then
+    INSTALL_SCRIPTURA="${INSTALL_SCRIPTURA:-Y}"
+else
+    echo "Do you want to install and configure local Scriptura API? (Y/n)"
+    echo "This will eliminate rate limiting and provide faster Bible text access."
+    read -r INSTALL_SCRIPTURA
+fi
+
+if [ -z "$INSTALL_SCRIPTURA" ] || [ "$INSTALL_SCRIPTURA" = "Y" ] || [ "$INSTALL_SCRIPTURA" = "y" ]; then
+    echo "Installing local Scriptura API..."
+    
+    # Run the Scriptura setup script
+    if [ -f "setup_scriptura_local.sh" ]; then
+        chmod +x setup_scriptura_local.sh
+        ./setup_scriptura_local.sh
+        
+        # Update config.yml to use local Scriptura
+        echo "Updating config.yml to use local Scriptura API..."
+        sed -i.bak 's/use_local: false/use_local: true/' config.yml
+        rm -f config.yml.bak
+        
+        echo "✅ Local Scriptura API installed and configured!"
+        echo "   - API will run on port 8081"
+        echo "   - Config updated to use local instance"
+        echo "   - No more rate limiting issues"
+    else
+        echo "❌ setup_scriptura_local.sh not found. Skipping Scriptura setup."
+    fi
+else
+    echo "Skipping Scriptura API setup. Using remote API (may have rate limits)."
+fi
+
 # --- SYSTEMD SETUP ---
 # Skip systemd setup in CI environments
 if [ "$CI" = "true" ] || [ "$GITHUB_ACTIONS" = "true" ]; then
@@ -239,13 +276,37 @@ else
         sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/liturgical.service | sed "s|User=pi|User=$CURRENT_USER|g" > /tmp/liturgical.service
         sudo cp /tmp/liturgical-web.service /etc/systemd/system/liturgical-web.service
         sudo cp /tmp/liturgical.service /etc/systemd/system/liturgical.service
+        
+        # Install Scriptura API service if local Scriptura was installed
+        if [ -d "scriptura-api" ]; then
+            echo "Installing Scriptura API systemd service..."
+            sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/scriptura-api.service | sed "s|{{USER}}|$CURRENT_USER|g" > /tmp/scriptura-api.service
+            sudo cp /tmp/scriptura-api.service /etc/systemd/system/scriptura-api.service
+            sudo systemctl daemon-reload
+            sudo systemctl enable scriptura-api.service
+            sudo systemctl start scriptura-api.service
+            echo "Scriptura API service installed and started on port 8081"
+        fi
+        
         sudo systemctl daemon-reload
         sudo systemctl enable liturgical-web.service
         sudo systemctl start liturgical-web.service
         echo "Web server service installed and enabled for automatic startup."
-        echo "Web server will be available at: http://localhost:8080"
-        echo "Note: Web server runs continuously, separate from the daily display updates."
-        echo "Web server config: config.yml"
+        echo ""
+        echo "🌐 SERVICES RUNNING:"
+        echo "   - Web server: http://localhost:8080"
+        if [ -d "scriptura-api" ]; then
+            echo "   - Scriptura API: http://localhost:8081"
+            echo "   - Scriptura docs: http://localhost:8081/docs"
+        fi
+        echo ""
+        echo "📝 CONFIGURATION:"
+        echo "   - Main config: config.yml"
+        echo "   - Web server runs continuously"
+        echo "   - Daily display updates via systemd timer"
+        if [ -d "scriptura-api" ]; then
+            echo "   - Local Scriptura API eliminates rate limiting"
+        fi
     else
         echo "Skipping systemd service and timer setup. You can enable it later by running these commands manually."
     fi
