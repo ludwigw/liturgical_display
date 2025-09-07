@@ -52,11 +52,6 @@ def create_app(config=None):
     # Initialize data service with config
     global data_service
     try:
-        # Debug: Print config to see what's being passed
-        print(f"DEBUG: Config being passed to DataService:")
-        print(f"  scriptura section: {config.get('scriptura', 'NOT FOUND')}")
-        print(f"  use_local: {config.get('scriptura', {}).get('use_local', 'NOT FOUND')}")
-        
         data_service = DataService(config=config)
     except ValueError as e:
         if "Scriptura API not configured" in str(e):
@@ -348,8 +343,8 @@ def api_token_usage():
 def api_reading_content(reading_reference):
     """API endpoint for fetching reading content from Scriptura API."""
     try:
-        from .services.scriptura_service import ScripturaService
-        scriptura_service = ScripturaService()
+        # Use the global data_service's scriptura_service instead of creating a new one
+        scriptura_service = data_service.scriptura_service
         
         # Get reading content
         reading_contents = scriptura_service.get_reading_contents([reading_reference])
