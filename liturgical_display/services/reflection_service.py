@@ -223,9 +223,7 @@ Example:
             message_parts.append("Readings:")
             for i, reading_data in enumerate(inputs['readings'], 1):
                 if isinstance(reading_data, dict) and 'text' in reading_data:
-                    # Strip HTML tags for LLM consumption
-                    text = self._strip_html_tags(reading_data['text'])
-                    message_parts.append(f"- Reading {i}: {text}")
+                    message_parts.append(f"- Reading {i}: {reading_data['text']}")
                 elif isinstance(reading_data, str):
                     message_parts.append(f"- Reading {i}: {reading_data}")
         
