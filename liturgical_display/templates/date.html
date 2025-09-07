@@ -51,7 +51,6 @@
             {% for reading in data.readings %}
                 {% if reading.is_alternative %}
                 <li class="alternative-reading">
-                    <span class="reading-label">Reading:</span>
                     {% for alt in reading.alternatives %}
                         {% if alt.text and not alt.text.startswith('[Reading:') %}
                         <a href="#" class="reading-link" data-reading="{{ alt.reference }}">{{ alt.reference }}</a>
