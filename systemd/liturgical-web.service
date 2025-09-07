@@ -15,5 +15,13 @@ RestartSec=10
 Environment=PYTHONUNBUFFERED=1
 Environment=LITURGICAL_CONFIG={{PROJECT_DIR}}/config.yml
 
+# Resource limits for low-memory systems
+MemoryLimit=64M
+MemoryAccounting=true
+MemoryHigh=48M
+MemoryMax=64M
+LimitNOFILE=1024
+LimitNPROC=50
+
 [Install]
 WantedBy=multi-user.target 
