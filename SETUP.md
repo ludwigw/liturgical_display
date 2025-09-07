@@ -270,13 +270,13 @@ The setup script automatically configures memory limits for low-memory Raspberry
 
 ### Automatic Memory Limits
 - **ImageMagick**: 64MB memory limit (prevents OOM kills)
-- **Scriptura API**: 32MB memory limit (only loads ASV version)
+- **Scriptura API**: 64MB memory limit (lazy loading, only loads ASV version on-demand)
 - **Web Server**: 64MB memory limit
 - **Additional swap**: 1GB created if high swap usage detected
 
 ### Memory Usage Breakdown
 - **System**: ~100MB
-- **Scriptura API**: ~8MB (ASV only, saves 18MB vs all versions)
+- **Scriptura API**: ~20-50MB (lazy loading, only loads ASV version on-demand)
 - **Web Server**: ~20MB
 - **ImageMagick**: ~64MB (limited)
 - **Available for conversion**: ~200MB+

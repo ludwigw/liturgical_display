@@ -208,7 +208,7 @@ The system supports both local and remote Scriptura API for Bible text access:
 - **Faster**: No rate limiting, local network access
 - **Reliable**: No dependency on external services
 - **Customizable**: Can be enhanced with custom parsing logic
-- **Memory Optimized**: Limited to 32MB to prevent OOM issues on Raspberry Pi
+- **Memory Optimized**: Limited to 64MB with lazy loading to prevent OOM issues on Raspberry Pi
 
 The setup script automatically installs and configures the local Scriptura API:
 ```bash
@@ -223,7 +223,7 @@ The setup script automatically installs and configures the local Scriptura API:
 #### Memory Management
 The system includes comprehensive memory management for low-memory Raspberry Pi systems:
 - **ImageMagick**: Limited to 64MB memory usage
-- **Scriptura API**: Limited to 32MB memory usage
+- **Scriptura API**: Limited to 64MB memory usage with lazy loading
 - **Web Server**: Limited to 64MB memory usage
 - **Automatic swap**: Additional 1GB swap created if needed
 - **Bible data**: Only loads ASV version by default (saves ~18MB)
