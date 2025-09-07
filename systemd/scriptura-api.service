@@ -22,28 +22,11 @@ ProtectSystem=false
 ProtectHome=false
 ReadWritePaths={{PROJECT_DIR}}/scriptura-api
 
-# Resource limits for low-memory systems
-MemoryLimit=128M
+# Minimal resource limits - let system handle thread limits
+MemoryLimit=256M
 MemoryAccounting=true
-MemoryHigh=96M
-MemoryMax=128M
-LimitNOFILE=1024
-LimitNPROC=200
-
-# Additional resource constraints
-LimitAS=128M
-LimitRSS=128M
-LimitDATA=128M
-LimitFSIZE=10M
-LimitSTACK=8M
-LimitCORE=0
-LimitMEMLOCK=64K
-LimitLOCKS=32
-LimitSIGPENDING=32
-LimitMSGQUEUE=819200
-LimitNICE=0
-LimitRTPRIO=0
-LimitRTTIME=1000000
+MemoryHigh=200M
+MemoryMax=256M
 
 [Install]
 WantedBy=multi-user.target
