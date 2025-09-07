@@ -71,6 +71,10 @@ class DataService:
             if 'url' in data and 'wikipedia_url' not in data:
                 data['wikipedia_url'] = data['url']
             
+            # Enrich readings with actual text content and parsing status
+            if 'readings' in data:
+                data['readings'] = self.scriptura_service.get_reading_contents(data['readings'])
+            
             log(f"[data_service.py] Retrieved data: {data.get('name', 'Unknown')}")
             return data
             
