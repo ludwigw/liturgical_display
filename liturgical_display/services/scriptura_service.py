@@ -187,6 +187,9 @@ class ScripturaService:
                         book = book_chapter
                         chapter = "1"
                     
+                    # Normalize book name for API
+                    book = self._normalize_book_name(book)
+                    
                     # Get chapter data
                     chapter_data = self._get_chapter_data(book, chapter)
                     if not chapter_data:
@@ -575,6 +578,27 @@ class ScripturaService:
         
         return cleaned
     
+    def _normalize_book_name(self, book: str) -> str:
+        """
+        Normalize book names to match Scriptura API expectations.
+        
+        Args:
+            book: Book name from liturgical calendar
+            
+        Returns:
+            Normalized book name for API
+        """
+        # Common book name mappings
+        book_mappings = {
+            'Psalm': 'Psalms',
+            'Ps': 'Psalms',
+            'PSALM': 'Psalms',
+            'PSALMS': 'Psalms',
+            # Add more mappings as needed
+        }
+        
+        return book_mappings.get(book, book)
+    
     def _parse_reference(self, reference: str) -> tuple[str, str, str]:
         """
         Parse a Bible reference into book, chapter, verse.
@@ -616,13 +640,18 @@ class ScripturaService:
                         book = book_chapter
                         chapter = "1"
                     
+                    # Normalize book name for API
+                    book = self._normalize_book_name(book)
+                    
                     # Clean up verse part - remove suffixes like "a", "b", etc.
                     verse = self._clean_verse_suffix(verse_part)
                     
                     return book, chapter, verse
             
             # If no colon, assume it's just a book name
-            return reference.strip(), "1", "1"
+            book = reference.strip()
+            book = self._normalize_book_name(book)
+            return book, "1", "1"
             
         except Exception as e:
             log(f"[scriptura_service.py] Error parsing reference '{reference}': {e}")
