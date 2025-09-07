@@ -301,20 +301,27 @@ else
             sudo chown -R $CURRENT_USER:$CURRENT_USER $PROJECT_DIR/scriptura-api/
             chmod -R 755 $PROJECT_DIR/scriptura-api/
             
-            # Create and install service file
+            # Stop existing service if running
+            sudo systemctl stop scriptura-api.service 2>/dev/null || true
+            
+            # Create and install service file with proper security settings
+            echo "Creating systemd service file with proper security settings..."
             sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/scriptura-api.service | sed "s|{{USER}}|$CURRENT_USER|g" > /tmp/scriptura-api.service
             sudo cp /tmp/scriptura-api.service /etc/systemd/system/scriptura-api.service
+            
+            # Reload systemd and start service
             sudo systemctl daemon-reload
             sudo systemctl enable scriptura-api.service
             sudo systemctl start scriptura-api.service
             
             # Wait a moment and check if it started successfully
-            sleep 3
+            sleep 5
             if systemctl is-active --quiet scriptura-api.service; then
                 echo "✅ Scriptura API service installed and started on port 8081"
             else
-                echo "⚠️  Scriptura API service installed but may not be running properly"
-                echo "   Check logs with: sudo journalctl -u scriptura-api.service -f"
+                echo "⚠️  Scriptura API service failed to start - checking logs..."
+                sudo journalctl -u scriptura-api.service -n 5 --no-pager
+                echo "   This may be due to security settings or missing dependencies"
             fi
         fi
         
@@ -336,6 +343,29 @@ else
         echo "   - Daily display updates via systemd timer"
         if [ -d "scriptura-api" ]; then
             echo "   - Local Scriptura API eliminates rate limiting"
+        fi
+        
+        # Final verification
+        echo ""
+        echo "🔍 FINAL VERIFICATION:"
+        if [ -d "scriptura-api" ]; then
+            if systemctl is-active --quiet scriptura-api.service; then
+                echo "   ✅ Scriptura API service is running"
+                if curl -s --connect-timeout 5 "http://localhost:8081/api/versions" >/dev/null 2>&1; then
+                    echo "   ✅ Scriptura API is responding"
+                else
+                    echo "   ⚠️  Scriptura API not responding (may need a moment to start)"
+                fi
+            else
+                echo "   ❌ Scriptura API service is not running"
+                echo "      Check logs: sudo journalctl -u scriptura-api.service -f"
+            fi
+        fi
+        
+        if systemctl is-active --quiet liturgical-web.service; then
+            echo "   ✅ Web server service is running"
+        else
+            echo "   ❌ Web server service is not running"
         fi
     else
         echo "Skipping systemd service and timer setup. You can enable it later by running these commands manually."
