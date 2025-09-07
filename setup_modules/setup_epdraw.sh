@@ -51,16 +51,14 @@ if [ ! -d "$EPDRAW_SOURCE_DIR" ]; then
     echo "📥 Cloning IT8951-ePaper repository..."
     git clone https://github.com/ludwigw/IT8951-ePaper.git "$EPDRAW_SOURCE_DIR"
     cd "$EPDRAW_SOURCE_DIR"
-    echo "🔄 Switching to optimize-imagemagick-memory branch..."
-    git checkout optimize-imagemagick-memory
+    # Use main branch - ImageMagick optimizations are now merged
 else
     echo "📁 IT8951-ePaper directory exists. Checking for updates..."
     cd "$EPDRAW_SOURCE_DIR"
     OLD_HEAD=$(git rev-parse HEAD)
     git fetch origin
-    echo "🔄 Switching to optimize-imagemagick-memory branch..."
-    git checkout optimize-imagemagick-memory
-    git pull origin optimize-imagemagick-memory || true
+    git checkout main
+    git pull origin main || true
     NEW_HEAD=$(git rev-parse HEAD)
     if [ "$OLD_HEAD" != "$NEW_HEAD" ]; then
         echo "IT8951-ePaper updated (HEAD changed). Rebuilding epdraw..."
