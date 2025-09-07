@@ -20,10 +20,24 @@ class ScripturaService:
         """Initialize the Scriptura service."""
         # Scriptura API is free and doesn't require an API key
         self.api_key = None  # Not needed for this API
-        self.base_url = base_url.rstrip('/')
-        self.version = version
         
-        log(f"[scriptura_service.py] Initialized with base URL: {self.base_url}, version: {self.version}")
+        # Check if we should use local Scriptura instance
+        if config and config.get('scriptura', {}).get('use_local', False):
+            scriptura_config = config.get('scriptura', {})
+            local_port = scriptura_config.get('local_port', 8081)
+            self.base_url = f"http://localhost:{local_port}"
+            log(f"[scriptura_service.py] Using LOCAL Scriptura API at: {self.base_url}")
+        else:
+            self.base_url = base_url.rstrip('/')
+            log(f"[scriptura_service.py] Using REMOTE Scriptura API at: {self.base_url}")
+        
+        # Use version from config if available, otherwise use parameter
+        if config and config.get('scriptura', {}).get('version'):
+            self.version = config['scriptura']['version']
+        else:
+            self.version = version
+        
+        self.config = config or {}
     
     def get_reading_contents(self, readings: list) -> list:
         """
