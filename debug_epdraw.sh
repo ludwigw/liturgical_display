@@ -29,17 +29,16 @@ fi
 
 # Test epdraw with a simple command
 echo "🧪 Testing epdraw..."
-cd "$(dirname "$EPDRAW_BINARY")"
 
 # Try to get version or help
-if ./epdraw --help >/dev/null 2>&1; then
+if "$EPDRAW_BINARY" --help >/dev/null 2>&1; then
     echo "✅ epdraw responds to --help"
-elif ./epdraw -h >/dev/null 2>&1; then
+elif "$EPDRAW_BINARY" -h >/dev/null 2>&1; then
     echo "✅ epdraw responds to -h"
 else
     echo "❌ epdraw doesn't respond to help flags"
     echo "🔍 Trying to run epdraw directly..."
-    ./epdraw 2>&1 || echo "Exit code: $?"
+    "$EPDRAW_BINARY" 2>&1 || echo "Exit code: $?"
     
     # Check if this is a build issue vs runtime issue
     if [ ! -f "IT8951-ePaper/bin/epdraw" ]; then
