@@ -62,9 +62,9 @@
                 </li>
                 {% else %}
                     {% if reading.parsed %}
-                    <li><a href="#" class="reading-link" data-reading="{{ reading }}">{{ reading }}</a></li>
+                    <li><a href="#" class="reading-link" data-reading="{{ reading.reference }}">{{ reading.reference }}</a></li>
                     {% else %}
-                    <li><span class="reading-failed">{{ reading }}</span></li>
+                    <li><span class="reading-failed">{{ reading.reference }}</span></li>
                     {% endif %}
                 {% endif %}
             {% endfor %}
