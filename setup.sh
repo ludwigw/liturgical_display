@@ -156,8 +156,8 @@ if command -v convert >/dev/null 2>&1; then
   <policy domain="resource" name="width" value="2KP"/>
   <policy domain="resource" name="height" value="2KP"/>
   <policy domain="resource" name="area" value="16MP"/>
-  <policy domain="resource" name="memory" value="64MB"/>
-  <policy domain="resource" name="map" value="128MB"/>
+  <policy domain="resource" name="memory" value="256MB"/>
+  <policy domain="resource" name="map" value="512MB"/>
   <policy domain="resource" name="disk" value="100MB"/>
   <policy domain="resource" name="file" value="100"/>
   <policy domain="resource" name="thread" value="1"/>
@@ -167,8 +167,8 @@ if command -v convert >/dev/null 2>&1; then
 EOF
     
     echo "✅ ImageMagick memory limits configured for low-memory systems"
-    echo "   - Memory limit: 64MB"
-    echo "   - Map limit: 128MB" 
+    echo "   - Memory limit: 256MB"
+    echo "   - Map limit: 512MB" 
     echo "   - Thread limit: 1"
     echo "   - This prevents OOM kills on Raspberry Pi"
 else
