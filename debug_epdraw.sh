@@ -5,40 +5,31 @@
 
 set -e
 
-EPDRAW_DIR="epdraw"
-
 echo "🔍 ePdraw Diagnostic Script"
 echo "=========================="
 
-# Check if ePdraw directory exists
-if [ ! -d "$EPDRAW_DIR" ]; then
-    echo "❌ ePdraw directory not found"
-    echo "💡 Run: ./setup_modules/setup_main.sh false epdraw true"
+# Check for ePdraw binary in the expected location
+EPDRAW_BINARY="bin/epdraw"
+
+if [ -f "$EPDRAW_BINARY" ]; then
+    echo "✅ Found ePdraw binary in bin/epdraw"
+else
+    echo "❌ ePdraw binary not found in bin/epdraw"
+    echo "💡 Run: ./setup_modules/setup_main.sh --module epdraw --force-rebuild"
     exit 1
 fi
-
-echo "✅ ePdraw directory exists"
-
-# Check if epdraw binary exists
-if [ ! -f "$EPDRAW_DIR/epdraw" ]; then
-    echo "❌ epdraw binary not found"
-    echo "💡 Run: ./setup_modules/setup_main.sh false epdraw true"
-    exit 1
-fi
-
-echo "✅ epdraw binary exists"
 
 # Check if epdraw is executable
-if [ ! -x "$EPDRAW_DIR/epdraw" ]; then
+if [ ! -x "$EPDRAW_BINARY" ]; then
     echo "❌ epdraw binary not executable"
     echo "💡 Fixing permissions..."
-    chmod +x "$EPDRAW_DIR/epdraw"
+    chmod +x "$EPDRAW_BINARY"
     echo "✅ Fixed permissions"
 fi
 
 # Test epdraw with a simple command
 echo "🧪 Testing epdraw..."
-cd "$EPDRAW_DIR"
+cd "$(dirname "$EPDRAW_BINARY")"
 
 # Try to get version or help
 if ./epdraw --help >/dev/null 2>&1; then
@@ -49,6 +40,16 @@ else
     echo "❌ epdraw doesn't respond to help flags"
     echo "🔍 Trying to run epdraw directly..."
     ./epdraw 2>&1 || echo "Exit code: $?"
+    
+    # Check if this is a build issue vs runtime issue
+    if [ ! -f "IT8951-ePaper/bin/epdraw" ]; then
+        echo ""
+        echo "⚠️  epdraw binary not found in source directory"
+        echo "💡 This usually means the build failed due to missing dependencies"
+        echo "   - On Raspberry Pi: Install bcm2835 library"
+        echo "   - On macOS: epdraw cannot be built (hardware-specific)"
+        echo "   - For testing: Use Docker or mock epdraw"
+    fi
 fi
 
 # Check for missing dependencies
@@ -67,15 +68,21 @@ if ! command -v git >/dev/null 2>&1; then
     missing_deps+=("git")
 fi
 
+# Check for bcm2835 library (Raspberry Pi specific)
+if [ ! -f "/usr/include/bcm2835.h" ] && [ ! -f "/usr/local/include/bcm2835.h" ]; then
+    missing_deps+=("libbcm2835-dev")
+fi
+
 if [ ${#missing_deps[@]} -gt 0 ]; then
     echo "❌ Missing dependencies: ${missing_deps[*]}"
     echo "💡 Install with: sudo apt-get install ${missing_deps[*]}"
+    echo "   Note: epdraw requires Raspberry Pi hardware and bcm2835 library"
 else
     echo "✅ All basic dependencies present"
 fi
 
 # Check file permissions
 echo "🔍 Checking file permissions..."
-ls -la epdraw
+ls -la "$EPDRAW_BINARY"
 
 echo "🎉 ePdraw diagnostic complete!"
