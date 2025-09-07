@@ -203,6 +203,41 @@ else
     echo "⚠️  Not on a system with apt-get, skipping swap configuration"
 fi
 
+# Disable desktop environment to free memory (optional)
+echo "Checking for desktop environment to disable..."
+if command -v apt-get >/dev/null 2>&1; then
+    if [ "$NON_INTERACTIVE" = "true" ]; then
+        DISABLE_DESKTOP="${DISABLE_DESKTOP:-Y}"
+    else
+        echo ""
+        echo "Do you want to disable the desktop environment to free memory? (Y/n)"
+        echo "This will free up ~50-100MB of memory but disable GUI access."
+        read -r DISABLE_DESKTOP
+    fi
+    
+    if [ -z "$DISABLE_DESKTOP" ] || [ "$DISABLE_DESKTOP" = "Y" ] || [ "$DISABLE_DESKTOP" = "y" ]; then
+        echo "Disabling desktop environment to free memory..."
+        
+        # Disable common desktop managers
+        sudo systemctl disable gdm3 2>/dev/null || true
+        sudo systemctl disable lightdm 2>/dev/null || true
+        sudo systemctl disable xdm 2>/dev/null || true
+        sudo systemctl disable sddm 2>/dev/null || true
+        
+        # Disable X11 if running
+        sudo systemctl disable display-manager 2>/dev/null || true
+        
+        echo "✅ Desktop environment disabled"
+        echo "   - This frees up ~50-100MB of memory"
+        echo "   - GUI access will be disabled"
+        echo "   - Re-enable with: sudo systemctl enable gdm3"
+    else
+        echo "Keeping desktop environment enabled"
+    fi
+else
+    echo "⚠️  Not on a system with apt-get, skipping desktop environment configuration"
+fi
+
 echo "✅ Python environment setup complete"
 
 # --- RUN SETUP MODULES ---
