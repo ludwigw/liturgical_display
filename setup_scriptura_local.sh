@@ -44,12 +44,17 @@ echo "📍 Current directory: $(pwd)"
 echo "📁 Contents: $(ls -la)"
 
 # Create virtual environment for Scriptura
-if [ ! -d "venv" ]; then
-    echo "🐍 Creating virtual environment for Scriptura..."
+if [ ! -d "venv" ] || [ ! -f "venv/bin/activate" ]; then
+    if [ -d "venv" ]; then
+        echo "🐍 Virtual environment exists but is incomplete, recreating..."
+        rm -rf venv
+    else
+        echo "🐍 Creating virtual environment for Scriptura..."
+    fi
     python3 -m venv venv
     echo "✅ Virtual environment created"
 else
-    echo "✅ Virtual environment already exists"
+    echo "✅ Virtual environment already exists and is complete"
 fi
 
 # Ensure virtual environment is properly created
