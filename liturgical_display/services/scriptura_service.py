@@ -111,8 +111,10 @@ class ScripturaService:
             parse_result = self._parse_reference_with_api(reference)
             
             if parse_result and parse_result.get('parsed', False):
-                # Use the formatted text from the parsing API
-                return parse_result.get('formatted_text', f"[Reading: {reference}]"), True
+                # Get the formatted text from the parsing API and add HTML formatting
+                plain_text = parse_result.get('formatted_text', f"[Reading: {reference}]")
+                formatted_text = self._format_reading_html(plain_text)
+                return formatted_text, True
             else:
                 # Fallback for parsing errors
                 error_msg = parse_result.get('error', 'Unknown parsing error') if parse_result else 'No response from API'
@@ -176,3 +178,52 @@ class ScripturaService:
             log(f"[scriptura_service.py] ERROR parsing reference '{reference}': {e}")
             logger.error(f"Error parsing reference '{reference}': {e}")
             return None
+    
+    def _format_reading_html(self, plain_text: str) -> str:
+        """
+        Format plain text reading with HTML structure.
+        
+        Args:
+            plain_text: Plain text from parsing API (e.g., "1 Verse text 2 More text")
+            
+        Returns:
+            HTML formatted text with proper verse structure
+        """
+        if not plain_text or plain_text.startswith('[Reading:'):
+            return plain_text
+        
+        # Split by verse numbers (digits followed by space)
+        import re
+        parts = re.split(r'(\d+ )', plain_text)
+        
+        if len(parts) < 2:
+            return plain_text
+        
+        formatted_parts = []
+        i = 0
+        while i < len(parts):
+            if i + 1 < len(parts) and re.match(r'^\d+ $', parts[i]):
+                # This is a verse number
+                verse_num = parts[i].strip()
+                verse_text = parts[i + 1] if i + 1 < len(parts) else ""
+                
+                # Wrap verse number and first two words in nowrap span
+                words = verse_text.split()
+                if len(words) >= 2:
+                    first_two_words = f"{words[0]} {words[1]}"
+                    remaining_text = " ".join(words[2:]) if len(words) > 2 else ""
+                    formatted_verse = f'<span class="verse"><span class="verse-number">{verse_num}</span> <span class="nowrap">{first_two_words}</span>{remaining_text}</span>'
+                else:
+                    formatted_verse = f'<span class="verse"><span class="verse-number">{verse_num}</span> {verse_text}</span>'
+                
+                formatted_parts.append(formatted_verse)
+                i += 2
+            else:
+                # Regular text
+                if parts[i].strip():
+                    formatted_parts.append(parts[i])
+                i += 1
+        
+        # Join with spaces and wrap in paragraph
+        formatted_text = " ".join(formatted_parts)
+        return f'<p>{formatted_text}</p>'
