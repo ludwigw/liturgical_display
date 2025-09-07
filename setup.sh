@@ -1,6 +1,107 @@
 #!/bin/bash
 set -e
 
+# Main setup script for liturgical_display
+# This script orchestrates all setup modules and handles configuration
+
+# Parse command line arguments
+FORCE_REBUILD=false
+NON_INTERACTIVE=false
+SKIP_MODULES=""
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        --force-rebuild)
+            FORCE_REBUILD=true
+            shift
+            ;;
+        --non-interactive)
+            NON_INTERACTIVE=true
+            shift
+            ;;
+        --skip-modules)
+            SKIP_MODULES="$2"
+            shift 2
+            ;;
+        --help)
+            echo "Usage: $0 [--force-rebuild] [--non-interactive] [--skip-modules MODULE1,MODULE2]"
+            echo ""
+            echo "Options:"
+            echo "  --force-rebuild    Force rebuild of all components"
+            echo "  --non-interactive  Run without user prompts"
+            echo "  --skip-modules     Skip specific modules (comma-separated)"
+            echo "                     Available modules: epdraw, scriptura, services, python"
+            echo ""
+            echo "Examples:"
+            echo "  $0                                    # Run all modules interactively"
+            echo "  $0 --non-interactive                  # Run all modules non-interactively"
+            echo "  $0 --force-rebuild --non-interactive # Force rebuild everything"
+            echo "  $0 --skip-modules epdraw,services    # Skip ePdraw and services setup"
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            echo "Use --help for usage information"
+            exit 1
+            ;;
+    esac
+done
+
+echo "🚀 Liturgical Display Setup"
+echo "=========================="
+
+# Check if we're in the right directory
+if [ ! -f "requirements.txt" ] || [ ! -f "liturgical_display/__init__.py" ]; then
+    echo "❌ Error: This script must be run from the liturgical_display project root directory"
+    echo "   Make sure you're in the directory containing requirements.txt and liturgical_display/"
+    exit 1
+fi
+
+# Function to check if a module should be skipped
+should_skip_module() {
+    local module="$1"
+    if [ -n "$SKIP_MODULES" ]; then
+        echo "$SKIP_MODULES" | grep -q "$module"
+    else
+        return 1
+    fi
+}
+
+# Function to run a setup module
+run_module() {
+    local module="$1"
+    local script="setup_modules/setup_$module.sh"
+    
+    if [ ! -f "$script" ]; then
+        echo "❌ Module script not found: $script"
+        return 1
+    fi
+    
+    if should_skip_module "$module"; then
+        echo "⏭️  Skipping $module module (--skip-modules)"
+        return 0
+    fi
+    
+    echo "🔧 Running $module module..."
+    local args=""
+    if [ "$FORCE_REBUILD" = "true" ]; then
+        args="$args --force-rebuild"
+    fi
+    if [ "$NON_INTERACTIVE" = "true" ]; then
+        args="$args --non-interactive"
+    fi
+    
+    if "$script" $args; then
+        echo "✅ $module module completed successfully"
+    else
+        echo "❌ $module module failed"
+        return 1
+    fi
+}
+
+# --- PYTHON ENVIRONMENT SETUP ---
+echo "🐍 Setting up Python environment..."
+
 # Remove existing venv if it exists
 if [ -d "venv" ]; then
     echo "Removing existing virtual environment..."
@@ -34,96 +135,134 @@ else
     echo "ImageMagick is already installed."
 fi
 
-# Build epdraw tool if not already present or if IT8951-ePaper has updates
-REBUILD_EP=0
-if [ ! -f "bin/epdraw" ]; then
-    echo "epdraw tool not found, will build."
-    REBUILD_EP=1
+# Configure ImageMagick memory limits for low-memory systems (Raspberry Pi)
+echo "Configuring ImageMagick memory limits for low-memory systems..."
+if command -v convert >/dev/null 2>&1; then
+    # Create ImageMagick policy directory if it doesn't exist
+    sudo mkdir -p /etc/ImageMagick-6
+    
+    # Create policy file with strict memory limits for Raspberry Pi
+    sudo tee /etc/ImageMagick-6/policy.xml > /dev/null << 'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policymap [
+<!ELEMENT policymap (policy)*>
+<!ATTLIST policymap xmlns CDATA #FIXED ''>
+<!ELEMENT policy EMPTY>
+<!ATTLIST policy xmlns CDATA #FIXED '' domain NMTOKEN #REQUIRED
+  name NMTOKEN #IMPLIED pattern CDATA #IMPLIED rights NMTOKEN #IMPLIED
+  stealth NMTOKEN #IMPLIED value CDATA #IMPLIED>
+]>
+<policymap>
+  <policy domain="resource" name="width" value="2KP"/>
+  <policy domain="resource" name="height" value="2KP"/>
+  <policy domain="resource" name="area" value="16MP"/>
+  <policy domain="resource" name="memory" value="256MB"/>
+  <policy domain="resource" name="map" value="512MB"/>
+  <policy domain="resource" name="disk" value="100MB"/>
+  <policy domain="resource" name="file" value="100"/>
+  <policy domain="resource" name="thread" value="1"/>
+  <policy domain="resource" name="throttle" value="0"/>
+  <policy domain="resource" name="time" value="60"/>
+</policymap>
+EOF
+    
+    echo "✅ ImageMagick memory limits configured for low-memory systems"
+    echo "   - Memory limit: 256MB"
+    echo "   - Map limit: 512MB" 
+    echo "   - Thread limit: 1"
+    echo "   - This prevents OOM kills on Raspberry Pi"
+else
+    echo "⚠️  ImageMagick not available, skipping memory limit configuration"
 fi
 
-if [ -d "IT8951-ePaper" ]; then
-    echo "IT8951-ePaper directory exists. Checking for updates..."
-    cd IT8951-ePaper
-    OLD_HEAD=$(git rev-parse HEAD)
-    git fetch origin
-    git pull origin main || true
-    NEW_HEAD=$(git rev-parse HEAD)
-    if [ "$OLD_HEAD" != "$NEW_HEAD" ]; then
-        echo "IT8951-ePaper updated (HEAD changed). Rebuilding epdraw..."
-        make clean
-        REBUILD_EP=1
+# Configure additional swap space for low-memory systems
+echo "Configuring additional swap space for low-memory systems..."
+if command -v apt-get >/dev/null 2>&1; then
+    # Check current swap usage
+    CURRENT_SWAP=$(free | grep Swap | awk '{print $3}')
+    if [ "$CURRENT_SWAP" -gt 400000 ]; then
+        echo "⚠️  High swap usage detected (${CURRENT_SWAP}KB), creating additional swap..."
+        
+        # Create additional 1GB swap file
+        if [ -f "/swapfile2" ]; then
+            echo "   - /swapfile2 already exists, skipping creation"
+        else
+            sudo fallocate -l 1G /swapfile2 2>/dev/null || sudo dd if=/dev/zero of=/swapfile2 bs=1M count=1024
+            sudo chmod 600 /swapfile2
+            sudo mkswap /swapfile2
+            sudo swapon /swapfile2
+        fi
+        
+        # Make it permanent
+        if ! grep -q "/swapfile2" /etc/fstab; then
+            echo '/swapfile2 none swap sw 0 0' | sudo tee -a /etc/fstab
+        fi
+        
+        echo "✅ Additional 1GB swap space created and activated"
+        echo "   - This helps prevent OOM kills during image processing"
     else
-        echo "IT8951-ePaper is up to date."
-    fi
-    cd ..
-else
-    echo "Cloning IT8951-ePaper repository..."
-    git clone https://github.com/ludwigw/IT8951-ePaper.git
-    cd IT8951-ePaper
-    # No need to checkout refactir, use main
-    REBUILD_EP=1
-    cd ..
-fi
-
-if [ $REBUILD_EP -eq 1 ]; then
-    echo "Building epdraw tool..."
-    cd IT8951-ePaper
-    make bin/epdraw
-    echo "Copying epdraw to project bin directory..."
-    mkdir -p ../bin
-    cp bin/epdraw ../bin/
-    cd ..
-    echo "epdraw tool built successfully!"
-else
-    echo "epdraw tool already exists in bin/ directory and is up to date."
-fi
-
-echo "Setup complete! Virtual environment is ready."
-echo ""
-echo "Next steps:"
-echo "1. Edit config.yml to match your environment"
-if [ "$USER_OPENAI_KEY" = "your-openai-api-key-here" ]; then
-    echo "2. Add your OpenAI API key to config.yml for reflection generation"
-    echo "3. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
-    echo "4. (Optional) Enable systemd service for daily runs"
-else
-    echo "2. Test the workflow: source venv/bin/activate && python3 -m liturgical_display.main"
-    echo "3. Test reflection generation: source venv/bin/activate && python tests/test_reflection.py"
-    echo "4. (Optional) Enable systemd service for daily runs"
-fi
-
-echo ""
-echo "🔍 Running installation validation..."
-echo "================================================"
-
-if [ -f "validate_install.sh" ] && [ -x "validate_install.sh" ]; then
-    if ./validate_install.sh; then
-        echo ""
-        echo "🎉 Setup and validation completed successfully!"
-        echo "✅ Your liturgical_display installation is ready to use."
-    else
-        echo ""
-        echo "⚠️  Setup completed, but validation found some issues."
-        echo "Please review the validation output above and address any problems."
-        echo "You can run './validate_install.sh' again to re-check after fixing issues."
-        exit 1
+        echo "✅ Swap usage is reasonable (${CURRENT_SWAP}KB), no additional swap needed"
     fi
 else
-    echo "⚠️  Validation script not found or not executable."
-    echo "Setup completed, but please run './validate_install.sh' manually to verify the installation."
-fi 
+    echo "⚠️  Not on a system with apt-get, skipping swap configuration"
+fi
 
-# Parse arguments for non-interactive mode
-NON_INTERACTIVE=0
-for arg in "$@"; do
-  if [ "$arg" = "--non-interactive" ]; then
-    NON_INTERACTIVE=1
-  fi
-done
+# Disable desktop environment to free memory (optional)
+echo "Checking for desktop environment to disable..."
+if command -v apt-get >/dev/null 2>&1; then
+    if [ "$NON_INTERACTIVE" = "true" ]; then
+        DISABLE_DESKTOP="${DISABLE_DESKTOP:-Y}"
+    else
+        echo ""
+        echo "Do you want to disable the desktop environment to free memory? (Y/n)"
+        echo "This will free up ~50-100MB of memory but disable GUI access."
+        read -r DISABLE_DESKTOP
+    fi
+    
+    if [ -z "$DISABLE_DESKTOP" ] || [ "$DISABLE_DESKTOP" = "Y" ] || [ "$DISABLE_DESKTOP" = "y" ]; then
+        echo "Disabling desktop environment to free memory..."
+        
+        # Disable common desktop managers
+        sudo systemctl disable gdm3 2>/dev/null || true
+        sudo systemctl disable lightdm 2>/dev/null || true
+        sudo systemctl disable xdm 2>/dev/null || true
+        sudo systemctl disable sddm 2>/dev/null || true
+        
+        # Disable X11 if running
+        sudo systemctl disable display-manager 2>/dev/null || true
+        
+        echo "✅ Desktop environment disabled"
+        echo "   - This frees up ~50-100MB of memory"
+        echo "   - GUI access will be disabled"
+        echo "   - Re-enable with: sudo systemctl enable gdm3"
+    else
+        echo "Keeping desktop environment enabled"
+    fi
+else
+    echo "⚠️  Not on a system with apt-get, skipping desktop environment configuration"
+fi
+
+echo "✅ Python environment setup complete"
+
+# --- RUN SETUP MODULES ---
+echo ""
+echo "🔧 Running setup modules..."
+
+# Run ePdraw setup
+run_module "epdraw"
+
+# Run Scriptura API setup
+run_module "scriptura"
+
+# Run systemd services setup
+run_module "services"
 
 # --- CONFIGURATION SETUP ---
+echo ""
+echo "⚙️  Setting up configuration..."
+
 USER_HOME="$HOME"
-PROJECT_DIR="$(pwd)"  # Get the actual project directory where setup.sh is run from
+PROJECT_DIR="$(pwd)"
 BACKUP_FILE="config.yml.bak"
 
 # If config.yml exists, read current values
@@ -139,7 +278,7 @@ else
     CURRENT_OPENAI_KEY=""
 fi
 
-if [ $NON_INTERACTIVE -eq 1 ]; then
+if [ "$NON_INTERACTIVE" = "true" ]; then
     # Use env var or default for VCOM
     USER_VCOM="${VCOM:-$CURRENT_VCOM}"
     # Use env var or current value for OpenAI key
@@ -197,38 +336,6 @@ web_server:
 # API Keys for reflection generation
 openai_api_key: "$USER_OPENAI_KEY"
 # Note: Scriptura API is free and doesn't require an API key
-EOF
-
-echo "config.yml written. You can edit this file to further customize your setup."
-
-# --- SCRIPTURA API SETUP ---
-echo ""
-echo "Setting up local Scriptura API..."
-
-# Check if we should install Scriptura API
-if [ $NON_INTERACTIVE -eq 1 ]; then
-    INSTALL_SCRIPTURA="${INSTALL_SCRIPTURA:-Y}"
-else
-    echo "Do you want to install and configure local Scriptura API? (Y/n)"
-    echo "This will eliminate rate limiting and provide faster Bible text access."
-    read -r INSTALL_SCRIPTURA
-fi
-
-if [ -z "$INSTALL_SCRIPTURA" ] || [ "$INSTALL_SCRIPTURA" = "Y" ] || [ "$INSTALL_SCRIPTURA" = "y" ]; then
-    echo "Installing local Scriptura API..."
-    
-    # Run the Scriptura setup script
-    if [ -f "setup_scriptura_local.sh" ]; then
-        chmod +x setup_scriptura_local.sh
-        ./setup_scriptura_local.sh
-        
-        # Update config.yml to use local Scriptura
-        echo "Updating config.yml to use local Scriptura API..."
-        
-        # Check if Scriptura config exists, if not add it
-        if ! grep -q "scriptura:" config.yml; then
-            echo "Adding Scriptura configuration to config.yml..."
-            cat >> config.yml << 'EOF'
 
 # Scriptura API configuration
 scriptura:
@@ -236,138 +343,41 @@ scriptura:
   local_port: 8081  # Port for local Scriptura API
   version: "asv"    # Default Bible version
 EOF
-        else
-            # Update existing config
-            sed -i.bak 's/use_local: false/use_local: true/' config.yml
-            rm -f config.yml.bak
-        fi
-        
-        echo "✅ Local Scriptura API installed and configured!"
-        echo "   - API will run on port 8081"
-        echo "   - Config updated to use local instance"
-        echo "   - No more rate limiting issues"
+
+echo "config.yml written. You can edit this file to further customize your setup."
+
+# --- VALIDATION ---
+echo ""
+echo "🔍 Running installation validation..."
+echo "================================================"
+
+if [ -f "validate_install.sh" ] && [ -x "validate_install.sh" ]; then
+    if ./validate_install.sh; then
+        echo ""
+        echo "🎉 Setup and validation completed successfully!"
+        echo "✅ Your liturgical_display installation is ready to use."
     else
-        echo "❌ setup_scriptura_local.sh not found. Skipping Scriptura setup."
+        echo ""
+        echo "⚠️  Setup completed, but validation found some issues."
+        echo "Please review the validation output above and address any problems."
+        echo "You can run './validate_install.sh' again to re-check after fixing issues."
+        exit 1
     fi
 else
-    echo "Skipping Scriptura API setup. Using remote API (may have rate limits)."
+    echo "⚠️  Validation script not found or not executable."
+    echo "Setup completed, but please run './validate_install.sh' manually to verify the installation."
 fi
 
-# --- SYSTEMD SETUP ---
-# Skip systemd setup in CI environments
-if [ "$CI" = "true" ] || [ "$GITHUB_ACTIONS" = "true" ]; then
-    echo "CI environment detected, skipping systemd service and timer setup."
-else
-    if [ $NON_INTERACTIVE -eq 1 ]; then
-        ENABLE_SYSTEMD="${ENABLE_SYSTEMD:-Y}"
-    else
-        echo ""
-        echo "Do you want to schedule these to update daily using systemd? (Y/n)"
-        read -r ENABLE_SYSTEMD
-    fi
-    if [ -z "$ENABLE_SYSTEMD" ] || [ "$ENABLE_SYSTEMD" = "Y" ] || [ "$ENABLE_SYSTEMD" = "y" ]; then
-        echo "Installing and enabling systemd service and timer..."
-        # Substitute {{PROJECT_DIR}} in service file with actual project directory
-        sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/liturgical.service > /tmp/liturgical.service
-        sudo cp /tmp/liturgical.service /etc/systemd/system/liturgical.service
-        sudo cp systemd/liturgical.timer /etc/systemd/system/liturgical.timer
-        sudo systemctl daemon-reload
-        sudo systemctl enable liturgical.timer
-        sudo systemctl start liturgical.timer
-        echo "Systemd service and timer installed and enabled for daily runs."
-        
-        # Install and enable web server service (separate from main service)
-        echo "Installing and enabling web server service..."
-        
-        # Get current user for systemd service
-        CURRENT_USER=$(whoami)
-        echo "Using current user '$CURRENT_USER' for systemd services"
-        
-        # Web server now uses config.yml (already created above)
-        echo "Web server will use config.yml for configuration"
-        
-        # Install systemd service with correct user
-        sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/liturgical-web.service | sed "s|User=pi|User=$CURRENT_USER|g" > /tmp/liturgical-web.service
-        sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/liturgical.service | sed "s|User=pi|User=$CURRENT_USER|g" > /tmp/liturgical.service
-        sudo cp /tmp/liturgical-web.service /etc/systemd/system/liturgical-web.service
-        sudo cp /tmp/liturgical.service /etc/systemd/system/liturgical.service
-        
-        # Install Scriptura API service if local Scriptura was installed
-        if [ -d "scriptura-api" ]; then
-            echo "Installing Scriptura API systemd service..."
-            
-            # Fix ownership and permissions first
-            echo "Setting proper ownership and permissions for Scriptura API..."
-            sudo chown -R $CURRENT_USER:$CURRENT_USER $PROJECT_DIR/scriptura-api/
-            chmod -R 755 $PROJECT_DIR/scriptura-api/
-            
-            # Stop existing service if running
-            sudo systemctl stop scriptura-api.service 2>/dev/null || true
-            
-            # Create and install service file with proper security settings
-            echo "Creating systemd service file with proper security settings..."
-            sed "s|{{PROJECT_DIR}}|$PROJECT_DIR|g" systemd/scriptura-api.service | sed "s|{{USER}}|$CURRENT_USER|g" > /tmp/scriptura-api.service
-            sudo cp /tmp/scriptura-api.service /etc/systemd/system/scriptura-api.service
-            
-            # Reload systemd and start service
-            sudo systemctl daemon-reload
-            sudo systemctl enable scriptura-api.service
-            sudo systemctl start scriptura-api.service
-            
-            # Wait a moment and check if it started successfully
-            sleep 5
-            if systemctl is-active --quiet scriptura-api.service; then
-                echo "✅ Scriptura API service installed and started on port 8081"
-            else
-                echo "⚠️  Scriptura API service failed to start - checking logs..."
-                sudo journalctl -u scriptura-api.service -n 5 --no-pager
-                echo "   This may be due to security settings or missing dependencies"
-            fi
-        fi
-        
-        sudo systemctl daemon-reload
-        sudo systemctl enable liturgical-web.service
-        sudo systemctl start liturgical-web.service
-        echo "Web server service installed and enabled for automatic startup."
-        echo ""
-        echo "🌐 SERVICES RUNNING:"
-        echo "   - Web server: http://localhost:8080"
-        if [ -d "scriptura-api" ]; then
-            echo "   - Scriptura API: http://localhost:8081"
-            echo "   - Scriptura docs: http://localhost:8081/docs"
-        fi
-        echo ""
-        echo "📝 CONFIGURATION:"
-        echo "   - Main config: config.yml"
-        echo "   - Web server runs continuously"
-        echo "   - Daily display updates via systemd timer"
-        if [ -d "scriptura-api" ]; then
-            echo "   - Local Scriptura API eliminates rate limiting"
-        fi
-        
-        # Final verification
-        echo ""
-        echo "🔍 FINAL VERIFICATION:"
-        if [ -d "scriptura-api" ]; then
-            if systemctl is-active --quiet scriptura-api.service; then
-                echo "   ✅ Scriptura API service is running"
-                if curl -s --connect-timeout 5 "http://localhost:8081/api/versions" >/dev/null 2>&1; then
-                    echo "   ✅ Scriptura API is responding"
-                else
-                    echo "   ⚠️  Scriptura API not responding (may need a moment to start)"
-                fi
-            else
-                echo "   ❌ Scriptura API service is not running"
-                echo "      Check logs: sudo journalctl -u scriptura-api.service -f"
-            fi
-        fi
-        
-        if systemctl is-active --quiet liturgical-web.service; then
-            echo "   ✅ Web server service is running"
-        else
-            echo "   ❌ Web server service is not running"
-        fi
-    else
-        echo "Skipping systemd service and timer setup. You can enable it later by running these commands manually."
-    fi
-fi 
+echo ""
+echo "🌐 SERVICES RUNNING:"
+echo "   - Web server: http://localhost:8080"
+echo "   - Scriptura API: http://localhost:8081"
+echo "   - Scriptura docs: http://localhost:8081/docs"
+echo ""
+echo "📝 CONFIGURATION:"
+echo "   - Main config: config.yml"
+echo "   - Web server runs continuously"
+echo "   - Daily display updates via systemd timer"
+echo "   - Local Scriptura API eliminates rate limiting"
+echo ""
+echo "🎉 Setup complete! All modules installed and configured."

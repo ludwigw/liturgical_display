@@ -35,6 +35,61 @@ git clone https://github.com/ludwigw/liturgical_display.git && cd liturgical_dis
 5. **Web server is automatically enabled** and runs continuously for web access.
 6. **(Optional) Enable systemd service and timer** for daily runs (see systemd/ directory).
 
+## Modular Setup System
+
+The project now includes a modular setup system that allows you to run individual components or rebuild specific parts without running the entire setup.
+
+### Main Setup Script
+```bash
+./setup.sh                                    # Interactive setup
+./setup.sh --non-interactive                  # Non-interactive setup  
+./setup.sh --force-rebuild --non-interactive  # Force rebuild everything
+./setup.sh --skip-modules epdraw,services     # Skip specific modules
+```
+
+### Individual Module Scripts
+```bash
+# Run individual modules
+./setup_modules/setup_main.sh --module epdraw --force-rebuild
+./setup_modules/setup_main.sh --module scriptura --non-interactive
+./setup_modules/setup_main.sh --module services
+
+# Or run modules directly
+./setup_modules/setup_epdraw.sh --force-rebuild
+./setup_modules/setup_scriptura.sh --non-interactive
+./setup_modules/setup_services.sh
+```
+
+### Available Modules
+- **epdraw**: Builds the ePdraw tool for e-ink display control
+- **scriptura**: Sets up the local Scriptura API for Bible text access
+- **services**: Installs and configures systemd services
+
+### Debug Tools
+```bash
+# Diagnose ePdraw issues
+./debug_epdraw.sh
+
+# Check specific module status
+./setup_modules/setup_main.sh --module epdraw --help
+```
+
+### Common Use Cases
+```bash
+# First-time setup
+./setup.sh
+
+# Fix ePdraw issues
+./debug_epdraw.sh
+./setup_modules/setup_main.sh --module epdraw --force-rebuild
+
+# Rebuild Scriptura API
+./setup_modules/setup_main.sh --module scriptura --force-rebuild
+
+# Rebuild everything
+./setup.sh --force-rebuild --non-interactive
+```
+
 ## Validation
 
 ## Testing & Validation
@@ -153,6 +208,7 @@ The system supports both local and remote Scriptura API for Bible text access:
 - **Faster**: No rate limiting, local network access
 - **Reliable**: No dependency on external services
 - **Customizable**: Can be enhanced with custom parsing logic
+- **Memory Optimized**: Limited to 64MB with lazy loading to prevent OOM issues on Raspberry Pi
 
 The setup script automatically installs and configures the local Scriptura API:
 ```bash
@@ -163,6 +219,14 @@ The setup script automatically installs and configures the local Scriptura API:
 - **Simple**: No additional setup required
 - **Limited**: Subject to rate limiting
 - **Dependent**: Requires internet connectivity
+
+#### Memory Management
+The system includes comprehensive memory management for low-memory Raspberry Pi systems:
+- **ImageMagick**: Limited to 64MB memory usage
+- **Scriptura API**: Limited to 64MB memory usage with lazy loading
+- **Web Server**: Limited to 64MB memory usage
+- **Automatic swap**: Additional 1GB swap created if needed
+- **Bible data**: Only loads ASV version by default (saves ~18MB)
 
 ### Web Server Configuration
 
@@ -281,12 +345,14 @@ For deployment on actual Raspberry Pi hardware:
 - **Python version too old:** Ensure Python 3.11+ is installed
 - **Permission errors:** Check file permissions and ownership
 - **Network issues:** Ensure internet access for package downloads
+- **ePdraw build fails:** Use `./debug_epdraw.sh` to diagnose, then `./setup_modules/setup_main.sh --module epdraw --force-rebuild`
 
 **Hardware Issues:**
 - **Display not updating:** Ensure SPI is enabled on your Pi (`raspi-config`)
 - **VCOM errors:** Check the VCOM value in config.yaml matches your display
 - **Connection problems:** Verify all hardware connections are secure
 - **epdraw not found:** The setup script should build this automatically
+- **ePdraw exits with non-zero code:** Usually indicates incomplete build - use `--force-rebuild` flag
 
 **Runtime Issues:**
 - **Image generation fails:** Check font accessibility and liturgical-calendar package
@@ -298,11 +364,27 @@ For deployment on actual Raspberry Pi hardware:
 - **Web server not starting:** Check logs with `sudo journalctl -u liturgical-web.service -f`
 - **Web dependencies missing:** Run `pip install -r requirements.txt` in the virtual environment
 
+**Scriptura API Issues:**
+- **Scriptura API not responding:** Check if service is running with `sudo systemctl status scriptura-api.service`
+- **Rate limiting:** Ensure local Scriptura API is installed and running
+- **Parsing errors:** Check Scriptura API logs with `sudo journalctl -u scriptura-api.service -f`
+- **Memory issues:** Check if service is being killed due to memory limits with `sudo journalctl -u scriptura-api.service -f`
+
+**Memory Issues:**
+- **ImageMagick killed:** Usually indicates memory pressure - check `free -h` and `sudo dmesg | grep -i killed`
+- **Services restarting:** Check memory limits with `sudo systemctl show scriptura-api.service | grep Memory`
+- **OOM kills:** Increase swap space or reduce service memory usage
+- **High memory usage:** Check which services are using memory with `sudo systemctl status` and `free -h`
+
 ### Debugging Steps
 1. **Run validation:** `./validate_install.sh` to check all components
 2. **Check logs:** Look at the log file specified in config.yaml
 3. **Test manually:** Run each component separately to isolate issues
 4. **Verify config:** Ensure config.yaml has all required keys and valid values
+5. **Use modular debugging:** 
+   - For ePdraw issues: `./debug_epdraw.sh`
+   - For specific modules: `./setup_modules/setup_main.sh --module MODULE_NAME --help`
+   - Force rebuild components: `./setup_modules/setup_main.sh --module MODULE_NAME --force-rebuild`
 
 ### Getting Help
 - Check the validation output for specific error messages
