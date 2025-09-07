@@ -264,6 +264,38 @@ scriptura:
 openai_api_key: "your-key-here"
 ```
 
+## Memory Management
+
+The setup script automatically configures memory limits for low-memory Raspberry Pi systems:
+
+### Automatic Memory Limits
+- **ImageMagick**: 64MB memory limit (prevents OOM kills)
+- **Scriptura API**: 32MB memory limit (only loads ASV version)
+- **Web Server**: 64MB memory limit
+- **Additional swap**: 1GB created if high swap usage detected
+
+### Memory Usage Breakdown
+- **System**: ~100MB
+- **Scriptura API**: ~8MB (ASV only, saves 18MB vs all versions)
+- **Web Server**: ~20MB
+- **ImageMagick**: ~64MB (limited)
+- **Available for conversion**: ~200MB+
+
+### Troubleshooting Memory Issues
+```bash
+# Check memory usage
+free -h
+
+# Check service memory limits
+sudo systemctl show scriptura-api.service | grep Memory
+
+# Check for OOM kills
+sudo dmesg | grep -i killed
+
+# Monitor memory in real-time
+watch -n 1 'free -h'
+```
+
 ## Validation
 
 After setup, run validation to ensure everything is working:

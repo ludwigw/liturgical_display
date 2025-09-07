@@ -208,6 +208,7 @@ The system supports both local and remote Scriptura API for Bible text access:
 - **Faster**: No rate limiting, local network access
 - **Reliable**: No dependency on external services
 - **Customizable**: Can be enhanced with custom parsing logic
+- **Memory Optimized**: Limited to 32MB to prevent OOM issues on Raspberry Pi
 
 The setup script automatically installs and configures the local Scriptura API:
 ```bash
@@ -218,6 +219,14 @@ The setup script automatically installs and configures the local Scriptura API:
 - **Simple**: No additional setup required
 - **Limited**: Subject to rate limiting
 - **Dependent**: Requires internet connectivity
+
+#### Memory Management
+The system includes comprehensive memory management for low-memory Raspberry Pi systems:
+- **ImageMagick**: Limited to 64MB memory usage
+- **Scriptura API**: Limited to 32MB memory usage
+- **Web Server**: Limited to 64MB memory usage
+- **Automatic swap**: Additional 1GB swap created if needed
+- **Bible data**: Only loads ASV version by default (saves ~18MB)
 
 ### Web Server Configuration
 
@@ -359,6 +368,13 @@ For deployment on actual Raspberry Pi hardware:
 - **Scriptura API not responding:** Check if service is running with `sudo systemctl status scriptura-api.service`
 - **Rate limiting:** Ensure local Scriptura API is installed and running
 - **Parsing errors:** Check Scriptura API logs with `sudo journalctl -u scriptura-api.service -f`
+- **Memory issues:** Check if service is being killed due to memory limits with `sudo journalctl -u scriptura-api.service -f`
+
+**Memory Issues:**
+- **ImageMagick killed:** Usually indicates memory pressure - check `free -h` and `sudo dmesg | grep -i killed`
+- **Services restarting:** Check memory limits with `sudo systemctl show scriptura-api.service | grep Memory`
+- **OOM kills:** Increase swap space or reduce service memory usage
+- **High memory usage:** Check which services are using memory with `sudo systemctl status` and `free -h`
 
 ### Debugging Steps
 1. **Run validation:** `./validate_install.sh` to check all components
