@@ -36,4 +36,9 @@ logs/
 
 # Configuration files (user-specific)
 config.yml
-config.yaml scriptura-api/
+config.yaml
+
+# External repositories (cloned during setup)
+# These are separate projects that get cloned automatically
+scriptura-api/
+IT8951-ePaper/
