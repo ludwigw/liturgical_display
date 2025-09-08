@@ -55,7 +55,7 @@ Builds the ePdraw tool for e-ink display control.
 **Debug:**
 ```bash
 # Diagnose ePdraw issues
-./debug_epdraw.sh
+./scripts/debug/debug_epdraw.sh
 
 # Check ePdraw status
 ./setup_modules/setup_main.sh --module epdraw --help
@@ -83,6 +83,9 @@ Sets up the local Scriptura API for Bible text access.
 
 # Check if Scriptura is running
 curl http://localhost:8081/api/versions
+
+# Monitor memory usage
+./scripts/monitoring/monitor_memory.sh
 ```
 
 ### 3. Services Module

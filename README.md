@@ -35,6 +35,24 @@ git clone https://github.com/ludwigw/liturgical_display.git && cd liturgical_dis
 5. **Web server is automatically enabled** and runs continuously for web access.
 6. **(Optional) Enable systemd service and timer** for daily runs (see systemd/ directory).
 
+## Project Structure
+
+```
+liturgical_display/
+├── docs/                       # Documentation
+│   ├── ARCHITECTURE.md         # System architecture
+│   ├── SETUP.md               # Detailed setup guide
+│   └── README.md              # Documentation index
+├── scripts/                    # Utility scripts
+│   ├── debug/                  # Debug and troubleshooting
+│   ├── monitoring/             # Memory and system monitoring
+│   └── setup_modules/          # Modular setup system
+├── liturgical_display/         # Main Python package
+├── systemd/                    # Systemd service definitions
+├── tests/                      # Test suites
+└── setup.sh                    # Main setup script
+```
+
 ## Modular Setup System
 
 The project now includes a modular setup system that allows you to run individual components or rebuild specific parts without running the entire setup.
