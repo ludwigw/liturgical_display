@@ -46,13 +46,13 @@ for service in "${SERVICES[@]}"; do
         MEMORY_ACCOUNTING=$(systemctl show "$service" --property=MemoryAccounting --value 2>/dev/null || echo "N/A")
         
         # Convert bytes to human readable if possible
-        if [[ "$MEMORY_CURRENT" != "N/A" && "$MEMORY_CURRENT" != "0" ]]; then
+        if [[ "$MEMORY_CURRENT" != "N/A" && "$MEMORY_CURRENT" != "0" && "$MEMORY_CURRENT" != "[not set]" ]]; then
             MEMORY_CURRENT_HR=$(numfmt --to=iec --suffix=B "$MEMORY_CURRENT" 2>/dev/null || echo "$MEMORY_CURRENT")
         else
             MEMORY_CURRENT_HR="N/A"
         fi
         
-        if [[ "$MEMORY_PEAK" != "N/A" && "$MEMORY_PEAK" != "0" ]]; then
+        if [[ "$MEMORY_PEAK" != "N/A" && "$MEMORY_PEAK" != "0" && "$MEMORY_PEAK" != "[not set]" ]]; then
             MEMORY_PEAK_HR=$(numfmt --to=iec --suffix=B "$MEMORY_PEAK" 2>/dev/null || echo "$MEMORY_PEAK")
         else
             MEMORY_PEAK_HR="N/A"
