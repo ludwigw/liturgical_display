@@ -56,7 +56,7 @@ if [ -z "$ENABLE_SYSTEMD" ] || [ "$ENABLE_SYSTEMD" = "Y" ] || [ "$ENABLE_SYSTEMD
     
     # Install main service and timer
     echo "Installing main liturgical service and timer..."
-    sed "s|{{PROJECT_DIR}}|$PROJECT_ROOT|g" "$PROJECT_ROOT/systemd/liturgical.service" > /tmp/liturgical.service
+    sed "s|{{PROJECT_DIR}}|$PROJECT_ROOT|g" "$PROJECT_ROOT/systemd/liturgical.service" | sed "s|{{USER}}|$CURRENT_USER|g" > /tmp/liturgical.service
     sudo cp /tmp/liturgical.service /etc/systemd/system/liturgical.service
     sudo cp "$PROJECT_ROOT/systemd/liturgical.timer" /etc/systemd/system/liturgical.timer
     sudo systemctl daemon-reload
