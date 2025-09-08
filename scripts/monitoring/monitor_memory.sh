@@ -134,7 +134,7 @@ done
 
 echo ""
 echo -e "${BLUE}💡 Tips:${NC}"
-echo "- Run 'watch -n 5 ./monitor_memory.sh' for continuous monitoring"
+echo "- Run 'watch -n 5 ./scripts/monitoring/monitor_memory.sh' for continuous monitoring"
 echo "- Check logs with 'sudo journalctl -u SERVICE_NAME -f'"
 echo "- Restart services with 'sudo systemctl restart SERVICE_NAME'"
 echo ""

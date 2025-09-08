@@ -86,7 +86,7 @@ The project now includes a modular setup system that allows you to run individua
 ### Debug Tools
 ```bash
 # Diagnose ePdraw issues
-./debug_epdraw.sh
+./scripts/debug/debug_epdraw.sh
 
 # Check specific module status
 ./setup_modules/setup_main.sh --module epdraw --help
@@ -98,7 +98,7 @@ The project now includes a modular setup system that allows you to run individua
 ./setup.sh
 
 # Fix ePdraw issues
-./debug_epdraw.sh
+./scripts/debug/debug_epdraw.sh
 ./setup_modules/setup_main.sh --module epdraw --force-rebuild
 
 # Rebuild Scriptura API

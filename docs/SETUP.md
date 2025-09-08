@@ -171,7 +171,7 @@ Examples:
 ### Fixing Issues
 ```bash
 # ePdraw not working
-./debug_epdraw.sh
+./scripts/debug/debug_epdraw.sh
 ./setup_modules/setup_main.sh --module epdraw --force-rebuild
 
 # Scriptura API not responding
@@ -204,7 +204,7 @@ Examples:
 ### ePdraw Issues
 ```bash
 # Diagnose the problem
-./debug_epdraw.sh
+./scripts/debug/debug_epdraw.sh
 
 # Check what's wrong
 ./setup_modules/setup_main.sh --module epdraw --help
@@ -305,10 +305,10 @@ After setup, run validation to ensure everything is working:
 
 ```bash
 # Run full validation
-./validate_install.sh
+./scripts/validate_install.sh
 
 # Run integration tests
-./run_tests.sh
+./scripts/run_tests.sh
 ```
 
 ## Next Steps

@@ -352,7 +352,7 @@ echo "🔍 Running installation validation..."
 echo "================================================"
 
 if [ -f "validate_install.sh" ] && [ -x "validate_install.sh" ]; then
-    if ./validate_install.sh; then
+    if ./scripts/validate_install.sh; then
         echo ""
         echo "🎉 Setup and validation completed successfully!"
         echo "✅ Your liturgical_display installation is ready to use."
@@ -360,12 +360,12 @@ if [ -f "validate_install.sh" ] && [ -x "validate_install.sh" ]; then
         echo ""
         echo "⚠️  Setup completed, but validation found some issues."
         echo "Please review the validation output above and address any problems."
-        echo "You can run './validate_install.sh' again to re-check after fixing issues."
+        echo "You can run './scripts/validate_install.sh' again to re-check after fixing issues."
         exit 1
     fi
 else
     echo "⚠️  Validation script not found or not executable."
-    echo "Setup completed, but please run './validate_install.sh' manually to verify the installation."
+    echo "Setup completed, but please run './scripts/validate_install.sh' manually to verify the installation."
 fi
 
 echo ""

@@ -236,5 +236,5 @@ curl http://localhost:8080/api/health
 curl http://localhost:8081/api/versions
 
 # Check configuration
-./validate_install.sh
+./scripts/validate_install.sh
 ```
