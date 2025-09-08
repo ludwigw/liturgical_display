@@ -65,7 +65,7 @@ for service in "${SERVICES[@]}"; do
         echo "  Accounting:     $MEMORY_ACCOUNTING"
         
         # Check if approaching limits
-        if [[ "$MEMORY_CURRENT" != "N/A" && "$MEMORY_MAX" != "N/A" && "$MEMORY_CURRENT" != "0" && "$MEMORY_MAX" != "infinity" ]]; then
+        if [[ "$MEMORY_CURRENT" != "N/A" && "$MEMORY_CURRENT" != "0" && "$MEMORY_CURRENT" != "[not set]" && "$MEMORY_MAX" != "N/A" && "$MEMORY_MAX" != "infinity" && "$MEMORY_MAX" != "[not set]" ]]; then
             CURRENT_MB=$((MEMORY_CURRENT / 1024 / 1024))
             MAX_MB=$((MEMORY_MAX / 1024 / 1024))
             USAGE_PERCENT=$((CURRENT_MB * 100 / MAX_MB))
