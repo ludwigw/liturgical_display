@@ -359,11 +359,11 @@ For deployment on actual Raspberry Pi hardware:
 ### Common Issues
 
 **Setup/Installation Problems:**
-- **Validation fails:** Run `./validate_install.sh` to see specific issues
+- **Validation fails:** Run `./scripts/validate_install.sh` to see specific issues
 - **Python version too old:** Ensure Python 3.11+ is installed
 - **Permission errors:** Check file permissions and ownership
 - **Network issues:** Ensure internet access for package downloads
-- **ePdraw build fails:** Use `./debug_epdraw.sh` to diagnose, then `./setup_modules/setup_main.sh --module epdraw --force-rebuild`
+- **ePdraw build fails:** Use `./scripts/debug/debug_epdraw.sh` to diagnose, then `./setup_modules/setup_main.sh --module epdraw --force-rebuild`
 
 **Hardware Issues:**
 - **Display not updating:** Ensure SPI is enabled on your Pi (`raspi-config`)
@@ -395,12 +395,12 @@ For deployment on actual Raspberry Pi hardware:
 - **High memory usage:** Check which services are using memory with `sudo systemctl status` and `free -h`
 
 ### Debugging Steps
-1. **Run validation:** `./validate_install.sh` to check all components
+1. **Run validation:** `./scripts/validate_install.sh` to check all components
 2. **Check logs:** Look at the log file specified in config.yaml
 3. **Test manually:** Run each component separately to isolate issues
 4. **Verify config:** Ensure config.yaml has all required keys and valid values
 5. **Use modular debugging:** 
-   - For ePdraw issues: `./debug_epdraw.sh`
+   - For ePdraw issues: `./scripts/debug/debug_epdraw.sh`
    - For specific modules: `./setup_modules/setup_main.sh --module MODULE_NAME --help`
    - Force rebuild components: `./setup_modules/setup_main.sh --module MODULE_NAME --force-rebuild`
 

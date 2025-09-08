@@ -33,10 +33,20 @@ Setup and installation scripts (modular setup system).
   - `setup_services.sh` - Systemd services installation
   - `setup_main.sh` - Main orchestrator script
 
+- **`setup_tailscale_funnel.sh`** - Configure Tailscale Funnel for remote access
+  - Usage: `./scripts/setup/setup_tailscale_funnel.sh`
+  - Makes web server accessible from internet via secure tunnel
+  - Options: `--port <port>`, `--help`
+
 ### Root Level Scripts
 - **`run_tests.sh`** - Run integration and system tests
   - Usage: `./scripts/run_tests.sh`
   - Tests all components and services
+
+- **`validate_install.sh`** - Validate complete installation
+  - Usage: `./scripts/validate_install.sh`
+  - Checks virtual environment, dependencies, fonts, configuration
+  - Tests image generation pipeline
 
 ## Usage Examples
 
@@ -66,8 +76,20 @@ watch -n 5 ./scripts/monitoring/monitor_memory.sh
 # Setup specific component
 ./setup_modules/setup_main.sh --module epdraw --force-rebuild
 
+# Setup Tailscale Funnel for remote access
+./scripts/setup/setup_tailscale_funnel.sh --port 8080
+
 # Full setup
 ./setup.sh
+```
+
+### Validation
+```bash
+# Validate complete installation
+./scripts/validate_install.sh
+
+# Run system tests
+./scripts/run_tests.sh
 ```
 
 ## Script Categories
@@ -76,8 +98,8 @@ watch -n 5 ./scripts/monitoring/monitor_memory.sh
 |----------|---------|---------|
 | **Debug** | Troubleshooting | `debug_epdraw.sh`, `run_web_debug.py` |
 | **Monitoring** | System monitoring | `monitor_memory.sh` |
-| **Setup** | Installation | `setup_modules/*.sh` |
-| **Testing** | Validation | `run_tests.sh` |
+| **Setup** | Installation | `setup_modules/*.sh`, `setup_tailscale_funnel.sh` |
+| **Testing** | Validation | `run_tests.sh`, `validate_install.sh` |
 
 ## Adding New Scripts
 
